@@ -28,12 +28,6 @@ interface ConfiguredAddresses {
   tron: string; eth: string; bsc: string
 }
 
-const NETWORK_CONFIG: Record<Network, { label: string; fullName: string; icon: string }> = {
-  tron: { label: "TRC20", fullName: "Tron", icon: "🌊" },
-  eth: { label: "ERC20", fullName: "Ethereum", icon: "⟠" },
-  bsc: { label: "BEP20", fullName: "BSC", icon: "⚡" },
-}
-
 export function WalletScreen({
   initialAction,
   onActionHandled,
@@ -59,7 +53,6 @@ export function WalletScreen({
   const [depositInfo, setDepositInfo] = useState<DepositInfo | null>(null)
   const [depositLoading, setDepositLoading] = useState(false)
   const [depositError, setDepositError] = useState("")
-  const [checkingPayment, setCheckingPayment] = useState(false)
   const [copiedAddr, setCopiedAddr] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [nextCheck, setNextCheck] = useState<number>(30)
@@ -208,7 +201,7 @@ export function WalletScreen({
 
   const closeDeposit = () => {
     setShowDeposit(false); setDepositStep("choose_network")
-    setDepositAmount(""); setDepositInfo(null); setDepositError("")
+    setDepositAmount(""); setDepositInfo(null); setDepositError(""); setCopiedAddr(false)
   }
 
   const handleWithdraw = async () => {
@@ -394,179 +387,232 @@ export function WalletScreen({
         )}
       </div>
 
-      {/* ==================== DEPOSIT MODAL ==================== */}
+      {/* ============================================================ */}
+      /* ════════════════════════════════════════════════════════════ */
+      /* ══ DEPOSIT MODAL - نسخة معدلة بالكامل (الزر واضح دائماً) ══ */
+      /* ════════════════════════════════════════════════════════════ */
       {showDeposit && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
           onClick={(e) => { if (e.target === e.currentTarget) closeDeposit() }}>
-          <div className="bg-[#0f0f23] border border-white/10 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col animate-slide-up">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
+          
+          {/* Modal - ارتفاع ثابت ومناسب */}
+          <div className="bg-[#0f0f23] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl flex flex-col"
+            style={{ height: "auto", maxHeight: "90vh" }}
+            onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header - ثابت */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0 border-b border-white/10">
               <h2 className="text-lg font-bold">
                 {depositStep === "choose_network" ? "Deposit USDT"
                   : depositStep === "waiting_payment" ? "Send Payment"
-                    : "Deposit Confirmed!"}
+                  : "Deposit Confirmed!"}
               </h2>
-              <button onClick={closeDeposit} className="p-2 rounded-lg bg-white/10 active:scale-90"><X size={16} /></button>
+              <button onClick={closeDeposit} className="p-2 rounded-lg bg-white/10 active:scale-90 transition-all">
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6">
+            {/* Content - منطقة قابلة للتمرير */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {depositStep === "choose_network" && (
-                <div className="flex flex-col gap-4 pb-2">
+                <>
                   <div>
-                    <p className="text-xs text-gray-400 mb-2">Select Network</p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <p className="text-sm text-gray-400 mb-3 font-medium">Select Network</p>
+                    <div className="grid grid-cols-3 gap-3">
                       {(["tron", "eth", "bsc"] as Network[]).map((net) => (
-                        <button key={net} onClick={() => setSelectedNetwork(net)}
-                          className={`py-3 rounded-xl text-xs font-semibold border transition-all ${selectedNetwork === net
-                              ? "border-purple-500 bg-purple-600/20 text-purple-300"
-                              : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10"
-                            }`}>
-                          {NETWORK_CONFIG[net].label}
-                          <br /><span className="text-[10px] opacity-70">{NETWORK_CONFIG[net].fullName}</span>
+                        <button
+                          key={net}
+                          onClick={() => setSelectedNetwork(net)}
+                          className={`py-3 rounded-xl text-center transition-all ${
+                            selectedNetwork === net
+                              ? "bg-purple-600 border border-purple-400 shadow-lg shadow-purple-900/40"
+                              : "bg-white/5 border border-white/10 hover:bg-white/10"
+                          }`}
+                        >
+                          <p className="font-bold text-sm">{net === "tron" ? "TRC20" : net === "eth" ? "ERC20" : "BEP20"}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">{net === "tron" ? "Tron" : net === "eth" ? "Ethereum" : "BSC"}</p>
                         </button>
                       ))}
                     </div>
                   </div>
+
                   <div>
-                    <p className="text-xs text-gray-400 mb-2">Amount (USD)</p>
-                    <div className="flex items-center bg-black/40 border border-white/10 rounded-xl px-3">
-                      <span className="text-gray-500 mr-2">$</span>
-                      <input type="number" min={1} placeholder="Enter amount..." value={depositAmount}
+                    <p className="text-sm text-gray-400 mb-3 font-medium">Amount (USD)</p>
+                    <div className="flex items-center bg-black/40 border border-white/10 rounded-xl px-4 py-1">
+                      <span className="text-gray-400 text-lg mr-2">$</span>
+                      <input
+                        type="number"
+                        min={15}
+                        step={1}
+                        placeholder="Enter amount..."
+                        value={depositAmount}
                         onChange={(e) => setDepositAmount(e.target.value)}
-                        className="flex-1 bg-transparent py-3 text-white outline-none placeholder:text-gray-600" />
-                      <span className="text-gray-500 text-xs">USDT</span>
+                        className="flex-1 bg-transparent py-3 text-white text-lg outline-none placeholder:text-gray-600"
+                      />
+                      <span className="text-gray-500 text-sm ml-2">USDT</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">💰 Minimum deposit: $15.00</p>
+                    <p className="text-xs text-gray-500 mt-2">💰 Minimum deposit: $15.00</p>
                   </div>
-                  {depositError && <p className="text-red-400 text-xs bg-red-500/10 p-2 rounded-lg">{depositError}</p>}
-                </div>
+
+                  {depositError && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+                      <p className="text-red-400 text-sm text-center">{depositError}</p>
+                    </div>
+                  )}
+                </>
               )}
 
               {depositStep === "waiting_payment" && depositInfo && (
-                <div className="flex flex-col gap-4 pb-2">
-                  <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-2xl p-4">
-                    <p className="text-xs text-gray-400 mb-1">📤 Send exactly</p>
+                <>
+                  {/* المبلغ المرسل */}
+                  <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 border border-purple-500/30 rounded-xl p-4 text-center">
+                    <p className="text-xs text-gray-400 mb-1">🔒 Send exactly</p>
                     <p className="text-2xl font-bold text-purple-300">
-                      {depositInfo.pay_amount ?? `$${depositAmount}`}
-                      <span className="text-sm ml-2 text-gray-400">{depositInfo.pay_currency?.toUpperCase() ?? "USDT"}</span>
+                      {depositInfo.pay_amount?.toFixed(6) ?? `$${depositAmount}`}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Via {NETWORK_CONFIG[selectedNetwork].label} ({NETWORK_CONFIG[selectedNetwork].fullName})</p>
+                    <p className="text-sm text-gray-300 mt-1">
+                      {depositInfo.pay_currency?.toUpperCase() ?? "USDT"}{selectedNetwork === "tron" ? "TRC20" : selectedNetwork === "eth" ? "ERC20" : "BEP20"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Via {selectedNetwork === "tron" ? "TRC20 (Tron)" : selectedNetwork === "eth" ? "ERC20 (Ethereum)" : "BEP20 (BSC)"}
+                    </p>
                   </div>
+
+                  {/* عنوان المحفظة */}
                   <div>
                     <p className="text-xs text-gray-400 mb-2">📍 To this address</p>
                     <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-3">
                       <p className="flex-1 text-xs font-mono text-gray-200 break-all">{depositInfo.payment_address}</p>
-                      <button onClick={() => copyDepositAddr(depositInfo!.payment_address)}
-                        className="p-1.5 bg-white/10 rounded-lg flex-shrink-0 active:scale-90">
-                        {copiedAddr ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                      <button onClick={() => copyDepositAddr(depositInfo!.payment_address)} 
+                        className="p-2 bg-white/10 rounded-lg active:scale-90 transition-all flex-shrink-0">
+                        {copiedAddr ? <Check size={14} className="text-green-400" /> : <Copy size={14} className="text-gray-300" />}
                       </button>
                     </div>
                   </div>
+
+                  {/* مؤقت الانتهاء */}
                   {depositInfo.expiry && countdown !== null && (
-                    <div className={`flex items-center justify-between rounded-xl p-3 border transition-colors ${countdown === 0
-                        ? "bg-red-500/10 border-red-500/20"
+                    <div className={`flex items-center justify-between rounded-xl p-3 border ${
+                      countdown === 0
+                        ? "bg-red-500/10 border-red-500/30"
                         : countdown < 120
-                          ? "bg-orange-500/10 border-orange-500/20"
-                          : "bg-yellow-500/10 border-yellow-500/20"
-                      }`}>
+                        ? "bg-orange-500/10 border-orange-500/30"
+                        : "bg-yellow-500/10 border-yellow-500/30"
+                    }`}>
                       <div className="flex items-center gap-2">
-                        <Clock size={14} className={countdown === 0 ? "text-red-400" : countdown < 120 ? "text-orange-400" : "text-yellow-400"} />
-                        <p className={`text-xs font-medium ${countdown === 0 ? "text-red-300" : countdown < 120 ? "text-orange-300" : "text-yellow-300"}`}>
-                          {countdown === 0 ? "Address expired" : "⏳ Address expires in"}
+                        <span className="text-sm">🔑</span>
+                        <p className="text-xs font-medium">
+                          {countdown === 0 ? "Address expired" : "Address expires in"}
                         </p>
                       </div>
                       {countdown > 0 && (
-                        <span className={`font-mono font-bold text-sm tabular-nums ${countdown < 120 ? "text-orange-300" : "text-yellow-300"}`}>
+                        <span className="font-mono font-bold text-sm">
                           {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
                         </span>
                       )}
                     </div>
                   )}
+
+                  {/* معلومات التأكيد */}
                   <div className="bg-purple-900/20 border border-purple-900/30 rounded-xl p-3">
-                    <p className="text-xs text-gray-400">
-                      🔄 Your deposit will be automatically verified and credited within 1–30 minutes after blockchain confirmation.
+                    <p className="text-xs text-gray-400 text-center">
+                      📝 Your deposit will be automatically verified and credited within 1–30 minutes after blockchain confirmation.
                     </p>
                   </div>
-                </div>
+                </>
               )}
 
               {depositStep === "done" && (
                 <div className="flex flex-col items-center gap-4 py-6">
-                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center animate-bounce">
-                    <Check size={32} className="text-green-400" />
+                  <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center animate-bounce">
+                    <Check size={40} className="text-green-400" />
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-green-400">Deposit Confirmed! 🎉</p>
+                    <p className="text-xl font-bold text-green-400">Deposit Confirmed! 🎉</p>
                     <p className="text-gray-400 text-sm mt-1">Your balance has been updated.</p>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex-shrink-0 px-6 pt-3 pb-8 border-t border-white/5 bg-[#0f0f23]">
+            {/* Footer - الزر دائماً في الأسفل وواضح */}
+            <div className="flex-shrink-0 px-5 py-4 border-t border-white/10 bg-[#0f0f23] rounded-b-2xl">
               {depositStep === "choose_network" && (
-                <button onClick={handleCreateDeposit} disabled={depositLoading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all">
-                  {depositLoading
-                    ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</>
-                    : <>Continue <ChevronRight size={16} /></>}
+                <button
+                  onClick={handleCreateDeposit}
+                  disabled={depositLoading || !depositAmount || parseFloat(depositAmount) < 15}
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all text-white shadow-lg shadow-purple-900/40"
+                >
+                  {depositLoading ? (
+                    <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</>
+                  ) : (
+                    <>Continue to Payment <ChevronRight size={18} /></>
+                  )}
                 </button>
               )}
+
               {depositStep === "waiting_payment" && (
                 <div className="flex flex-col gap-2">
+                  {/* شريط التحقق التلقائي */}
                   {countdown !== 0 && (
                     <div className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2">
                       <div className="flex items-center gap-2">
-                        {checkingPayment
-                          ? <div className="w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                          : <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500" /></span>
-                        }
-                        <span className="text-xs text-gray-400">
-                          {checkingPayment ? "Checking payment…" : `Auto-checking every 30s`}
-                        </span>
+                        <span className="text-xs">🔗</span>
+                        <span className="text-xs text-gray-400">Auto-checking every 30s</span>
                       </div>
-                      {!checkingPayment && (
-                        <span className="text-xs font-mono text-purple-400 tabular-nums">
-                          {String(nextCheck).padStart(2, "0")}s
-                        </span>
-                      )}
+                      <span className="text-xs font-mono text-purple-400 tabular-nums">
+                        {String(nextCheck).padStart(2, "0")}s
+                      </span>
                     </div>
                   )}
-                  <button onClick={closeDeposit}
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm active:scale-95 text-gray-300">
+                  <button
+                    onClick={closeDeposit}
+                    className="w-full bg-white/10 hover:bg-white/20 py-3.5 rounded-xl text-sm font-medium active:scale-98 transition-all"
+                  >
                     Close
                   </button>
                 </div>
               )}
+
               {depositStep === "done" && (
-                <button onClick={closeDeposit}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 py-3 rounded-xl font-semibold active:scale-95 transition-all">Done</button>
+                <button
+                  onClick={closeDeposit}
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 py-3.5 rounded-xl font-semibold active:scale-98 transition-all"
+                >
+                  Done
+                </button>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* ==================== WITHDRAW MODAL ==================== */}
+      {/* ============================================================ */}
+      /* ══ WITHDRAW MODAL ══ */
+      {/* ============================================================ */}
       {showWithdraw && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
           onClick={(e) => { if (e.target === e.currentTarget) closeWithdraw() }}>
-          <div className="bg-[#0f0f23] border border-white/10 rounded-t-3xl w-full max-w-lg p-6 pb-10 shadow-2xl animate-slide-up">
+          <div className="bg-[#0f0f23] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold">Withdraw USDT</h2>
-              <button onClick={closeWithdraw} className="p-2 rounded-lg bg-white/10 active:scale-90"><X size={16} /></button>
+              <button onClick={closeWithdraw} className="p-2 rounded-lg bg-white/10 active:scale-90"><X size={18} /></button>
             </div>
             {withdrawSuccess ? (
-              <div className="flex flex-col items-center gap-4 py-4">
-                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center animate-bounce">
-                  <Check size={32} className="text-green-400" />
+              <>
+                <div className="flex flex-col items-center gap-4 py-4">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center animate-bounce">
+                    <Check size={32} className="text-green-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-green-400">Request Submitted! ✅</p>
+                    <p className="text-gray-400 text-sm mt-1">Your withdrawal is pending admin approval.</p>
+                  </div>
+                  <button onClick={closeWithdraw}
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 py-3 rounded-xl font-semibold active:scale-95 transition-all">Done</button>
                 </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-green-400">Request Submitted! ✅</p>
-                  <p className="text-gray-400 text-sm mt-1">Your withdrawal is pending admin approval.</p>
-                </div>
-                <button onClick={closeWithdraw}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 py-3 rounded-xl font-semibold active:scale-95 transition-all">Done</button>
-              </div>
+              </>
             ) : (
               <div className="flex flex-col gap-4">
                 <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl p-3 flex items-center justify-between">
@@ -603,22 +649,6 @@ export function WalletScreen({
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes slide-up {
-          from {
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
-        }
-      `}</style>
     </div>
   )
 }
