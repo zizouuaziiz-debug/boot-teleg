@@ -201,7 +201,7 @@ export function WalletScreen({
   // ── Deposit flow ──────────────────────────────────────────────────────────
   const handleCreateDeposit = async () => {
     const amt = parseFloat(depositAmount)
-    if (isNaN(amt) || amt < 5) { setDepositError("Minimum deposit is $5"); return }
+    if (isNaN(amt) || amt < 15) { setDepositError("Minimum deposit is $15"); return }
     setDepositLoading(true); setDepositError("")
     try {
       const res = await fetch("/api/wallet/deposit/create", {
