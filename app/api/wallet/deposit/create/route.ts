@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { amount, network = "tron" } = body as { amount?: number; network?: "tron" | "eth" | "bsc" };
 
-  if (!amount || isNaN(Number(amount)) || Number(amount) < 5)
+  if (!amount || isNaN(Number(amount)) || Number(amount) < 15)
+    return NextResponse.json({ error: "Minimum deposit is $15" }, { status: 400 });
     return NextResponse.json({ error: "Minimum deposit is $1" }, { status: 400 });
 
   const { data: user } = await supabase.from("users").select("id")
