@@ -473,7 +473,7 @@ export function WalletScreen({
                         className="flex-1 bg-transparent py-3 text-white outline-none placeholder:text-gray-600" />
                       <span className="text-gray-500 text-xs">USDT</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Minimum deposit: $1.00</p>
+                    <p className="text-xs text-gray-500 mt-1">Minimum deposit: $5.00</p>
                   </div>
                   {depositError && <p className="text-red-400 text-xs bg-red-500/10 p-2 rounded-lg">{depositError}</p>}
                 </div>
