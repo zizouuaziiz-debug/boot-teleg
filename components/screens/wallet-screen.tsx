@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ArrowDownToLine, ArrowUpFromLine, Copy, Check, X, Clock, ChevronRight, RefreshCw, WifiOff } from "lucide-react"
+import { ArrowDownToLine, ArrowUpFromLine, Copy, Check, X, Clock, ChevronRight, RefreshCw, WifiOff, Wallet, History, TrendingUp, Award } from "lucide-react"
 import { useUser } from "@/context/user-context"
 import { useRealtimeTransactions, type LiveTransaction } from "@/hooks/use-realtime-transactions"
 
-type Tab          = "all" | "earnings" | "withdrawals" | "bonuses"
-type DepositStep  = "choose_network" | "waiting_payment" | "done"
-type Network      = "tron" | "eth" | "bsc"
+type Tab = "all" | "earnings" | "withdrawals" | "bonuses"
+type DepositStep = "choose_network" | "waiting_payment" | "done"
+type Network = "tron" | "eth" | "bsc"
 
 interface Transaction {
   id: string; type: string; amount: number; status: string
@@ -15,23 +15,23 @@ interface Transaction {
 }
 
 interface DepositInfo {
-  mode:             "nowpayments" | "static"
-  payment_id?:      string
-  payment_address:  string
-  pay_amount?:      number
-  pay_currency?:    string
-  expiry?:          string | null
-  transaction_id?:  string
+  mode: "nowpayments" | "static"
+  payment_id?: string
+  payment_address: string
+  pay_amount?: number
+  pay_currency?: string
+  expiry?: string | null
+  transaction_id?: string
 }
 
 interface ConfiguredAddresses {
   tron: string; eth: string; bsc: string
 }
 
-const NETWORK_LABELS: Record<Network, string> = {
-  tron: "TRC20 (Tron)",
-  eth:  "ERC20 (Ethereum)",
-  bsc:  "BEP20 (BSC)",
+const NETWORK_CONFIG: Record<Network, { label: string; fullName: string; icon: string }> = {
+  tron: { label: "TRC20", fullName: "Tron", icon: "🌊" },
+  eth: { label: "ERC20", fullName: "Ethereum", icon: "⟠" },
+  bsc: { label: "BEP20", fullName: "BSC", icon: "⚡" },
 }
 
 export function WalletScreen({
@@ -43,35 +43,34 @@ export function WalletScreen({
 }) {
   const { wallet, user, telegramId, authHeaders, refreshWallet } = useUser()
 
-  const [activeTab,       setActiveTab]       = useState<Tab>("all")
-  const [transactions,    setTransactions]     = useState<Transaction[]>([])
-  const [loadingTx,       setLoadingTx]        = useState(false)
-  const [copied,          setCopied]           = useState(false)
-  const [isRefreshing,    setIsRefreshing]     = useState(false)
-  const [flashId,         setFlashId]          = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>("all")
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loadingTx, setLoadingTx] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [flashId, setFlashId] = useState<string | null>(null)
 
   const [configuredAddrs, setConfiguredAddrs] = useState<ConfiguredAddresses>({ tron: "", eth: "", bsc: "" })
 
-  const [showDeposit,     setShowDeposit]      = useState(false)
-  const [depositStep,     setDepositStep]      = useState<DepositStep>("choose_network")
-  const [selectedNetwork, setSelectedNetwork]  = useState<Network>("tron")
-  const [depositAmount,   setDepositAmount]    = useState("")
-  const [depositInfo,     setDepositInfo]      = useState<DepositInfo | null>(null)
-  const [depositLoading,  setDepositLoading]   = useState(false)
-  const [depositError,    setDepositError]     = useState("")
-  const [checkingPayment, setCheckingPayment]  = useState(false)
-  const [copiedAddr,      setCopiedAddr]       = useState(false)
-  const [countdown,       setCountdown]        = useState<number | null>(null)
-  const [nextCheck,       setNextCheck]        = useState<number>(30)
+  const [showDeposit, setShowDeposit] = useState(false)
+  const [depositStep, setDepositStep] = useState<DepositStep>("choose_network")
+  const [selectedNetwork, setSelectedNetwork] = useState<Network>("tron")
+  const [depositAmount, setDepositAmount] = useState("")
+  const [depositInfo, setDepositInfo] = useState<DepositInfo | null>(null)
+  const [depositLoading, setDepositLoading] = useState(false)
+  const [depositError, setDepositError] = useState("")
+  const [checkingPayment, setCheckingPayment] = useState(false)
+  const [copiedAddr, setCopiedAddr] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const [nextCheck, setNextCheck] = useState<number>(30)
 
-  const [showWithdraw,    setShowWithdraw]     = useState(false)
-  const [withdrawAmount,  setWithdrawAmount]   = useState("")
-  const [withdrawAddress, setWithdrawAddress]  = useState("")
-  const [withdrawLoading, setWithdrawLoading]  = useState(false)
-  const [withdrawError,   setWithdrawError]    = useState("")
-  const [withdrawSuccess, setWithdrawSuccess]  = useState(false)
+  const [showWithdraw, setShowWithdraw] = useState(false)
+  const [withdrawAmount, setWithdrawAmount] = useState("")
+  const [withdrawAddress, setWithdrawAddress] = useState("")
+  const [withdrawLoading, setWithdrawLoading] = useState(false)
+  const [withdrawError, setWithdrawError] = useState("")
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false)
 
-  // ── Realtime transactions ─────────────────────────────────────────────────
   const { isLive } = useRealtimeTransactions(user?.id ?? null, {
     onNew: (tx: LiveTransaction) => {
       setTransactions(prev => {
@@ -88,13 +87,11 @@ export function WalletScreen({
     },
   })
 
-  // ── Handle initialAction from parent ────────────────────────────────────
   useEffect(() => {
-    if (initialAction === "deposit")   { setShowDeposit(true);  onActionHandled?.() }
+    if (initialAction === "deposit") { setShowDeposit(true); onActionHandled?.() }
     else if (initialAction === "withdraw") { setShowWithdraw(true); onActionHandled?.() }
   }, [initialAction, onActionHandled])
 
-  // ── Countdown timer for deposit expiry ───────────────────────────────────
   useEffect(() => {
     if (depositStep !== "waiting_payment" || !depositInfo?.expiry) {
       setCountdown(null)
@@ -110,27 +107,23 @@ export function WalletScreen({
     return () => clearInterval(id)
   }, [depositStep, depositInfo?.expiry])
 
-  // ── Auto-check payment every 30 seconds ──────────────────────────────────
   useEffect(() => {
     if (depositStep !== "waiting_payment" || !depositInfo) return
-    if (countdown === 0) return  // address expired, stop
+    if (countdown === 0) return
 
     setNextCheck(30)
     const ticker = setInterval(() => {
-      setNextCheck(prev => {
-        if (prev <= 1) return 30  // will reset after check
-        return prev - 1
-      })
+      setNextCheck(prev => prev <= 1 ? 30 : prev - 1)
     }, 1000)
 
     const checker = setInterval(async () => {
       if (!depositInfo?.transaction_id) return
       setNextCheck(30)
       try {
-        const res  = await fetch("/api/verify-deposits", {
-          method:  "POST",
+        const res = await fetch("/api/verify-deposits", {
+          method: "POST",
           headers: authHeaders as HeadersInit,
-          body:    JSON.stringify({ transaction_id: depositInfo.transaction_id }),
+          body: JSON.stringify({ transaction_id: depositInfo.transaction_id }),
         })
         const data = await res.json()
         if (data.status === "completed") {
@@ -138,34 +131,31 @@ export function WalletScreen({
           await refreshWallet()
           fetchTransactions()
         }
-      } catch {}
-    }, 30_000)
+      } catch { }
+    }, 30000)
 
     return () => { clearInterval(ticker); clearInterval(checker) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [depositStep, depositInfo?.transaction_id, countdown === 0])
 
-  // ── Load transactions ──────────────────────────────────────────────────────
   const fetchTransactions = useCallback(async () => {
     if (!telegramId) return
     setLoadingTx(true)
     try {
-      const res  = await fetch("/api/wallet/balance", { headers: authHeaders as HeadersInit, cache: "no-store" })
+      const res = await fetch("/api/wallet/balance", { headers: authHeaders as HeadersInit, cache: "no-store" })
       const data = await res.json()
       if (data.transactions) setTransactions(data.transactions)
-    } catch {}
+    } catch { }
     finally { setLoadingTx(false) }
   }, [telegramId, authHeaders])
 
   useEffect(() => { fetchTransactions() }, [fetchTransactions])
 
-  // ── Load configured deposit addresses ──────────────────────────────────────
   useEffect(() => {
     if (!telegramId) return
     fetch("/api/wallet/deposit", { headers: authHeaders as HeadersInit, cache: "no-store" })
       .then(r => r.json())
       .then(d => { if (d.addresses) setConfiguredAddrs(d.addresses) })
-      .catch(() => {})
+      .catch(() => { })
   }, [telegramId, authHeaders])
 
   const handleRefresh = async () => {
@@ -189,25 +179,23 @@ export function WalletScreen({
     })
   }
 
-  // ── Filter transactions ───────────────────────────────────────────────────
   const filteredTransactions = transactions.filter((tx) => {
-    if (activeTab === "all")         return true
-    if (activeTab === "earnings")    return ["earning","reward","referral","deposit","mining","spin","daily_bonus","admin_credit"].includes(tx.type) && Number(tx.amount) > 0
+    if (activeTab === "all") return true
+    if (activeTab === "earnings") return ["earning", "reward", "referral", "deposit", "mining", "spin", "daily_bonus", "admin_credit"].includes(tx.type) && Number(tx.amount) > 0
     if (activeTab === "withdrawals") return tx.type === "withdrawal"
-    if (activeTab === "bonuses")     return ["bonus","spin","referral_bonus","referral","daily_bonus"].includes(tx.type)
+    if (activeTab === "bonuses") return ["bonus", "spin", "referral_bonus", "referral", "daily_bonus"].includes(tx.type)
     return true
   })
 
-  // ── Deposit flow ──────────────────────────────────────────────────────────
   const handleCreateDeposit = async () => {
     const amt = parseFloat(depositAmount)
     if (isNaN(amt) || amt < 15) { setDepositError("Minimum deposit is $15"); return }
     setDepositLoading(true); setDepositError("")
     try {
       const res = await fetch("/api/wallet/deposit/create", {
-        method:  "POST",
+        method: "POST",
         headers: authHeaders as HeadersInit,
-        body:    JSON.stringify({ amount: amt, network: selectedNetwork }),
+        body: JSON.stringify({ amount: amt, network: selectedNetwork }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to create deposit")
@@ -218,40 +206,22 @@ export function WalletScreen({
     } finally { setDepositLoading(false) }
   }
 
-  const handleCheckPayment = async () => {
-    if (!depositInfo) return
-    setCheckingPayment(true)
-    try {
-      const res = await fetch("/api/verify-deposits", {
-        method:  "POST",
-        headers: authHeaders as HeadersInit,
-        body:    JSON.stringify({ transaction_id: depositInfo.transaction_id }),
-      })
-      const data = await res.json()
-      if (data.status === "completed") {
-        setDepositStep("done"); await refreshWallet(); fetchTransactions()
-      }
-    } catch {}
-    finally { setCheckingPayment(false) }
-  }
-
   const closeDeposit = () => {
     setShowDeposit(false); setDepositStep("choose_network")
     setDepositAmount(""); setDepositInfo(null); setDepositError("")
   }
 
-  // ── Withdraw flow ────────────────────────────────────────────────────────
   const handleWithdraw = async () => {
     const amt = parseFloat(withdrawAmount)
-    if (isNaN(amt) || amt <= 0)      { setWithdrawError("Enter a valid amount"); return }
-    if (!withdrawAddress.trim())      { setWithdrawError("Enter your wallet address"); return }
+    if (isNaN(amt) || amt <= 0) { setWithdrawError("Enter a valid amount"); return }
+    if (!withdrawAddress.trim()) { setWithdrawError("Enter your wallet address"); return }
     if (wallet && amt > Number(wallet.balance)) { setWithdrawError("Insufficient balance"); return }
     setWithdrawLoading(true); setWithdrawError("")
     try {
       const res = await fetch("/api/wallet/withdraw", {
-        method:  "POST",
+        method: "POST",
         headers: authHeaders as HeadersInit,
-        body:    JSON.stringify({ amount: amt, address: withdrawAddress }),
+        body: JSON.stringify({ amount: amt, address: withdrawAddress }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Withdrawal failed")
@@ -266,7 +236,6 @@ export function WalletScreen({
     setWithdrawError(""); setWithdrawSuccess(false)
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr)
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -274,51 +243,44 @@ export function WalletScreen({
 
   const txLabel = (tx: Transaction) => {
     const labels: Record<string, string> = {
-      deposit:       "Deposit",
-      withdrawal:    "Withdrawal",
-      earning:       "Video Earning",
-      referral:      "Referral Bonus",
-      bonus:         "Bonus",
-      spin:          "Lucky Spin",
-      mining:        "Mining Reward",
-      daily_bonus:   "Daily Bonus",
-      admin_credit:  "Admin Credit",
-      vip_upgrade:   "VIP Upgrade",
+      deposit: "Deposit", withdrawal: "Withdrawal", earning: "Video Earning",
+      referral: "Referral Bonus", bonus: "Bonus", spin: "Lucky Spin",
+      mining: "Mining Reward", daily_bonus: "Daily Bonus", admin_credit: "Admin Credit", vip_upgrade: "VIP Upgrade",
     }
     return labels[tx.type] || tx.type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())
   }
 
   const statusBadge = (status: string) => {
-    if (["completed","approved"].includes(status))
+    if (["completed", "approved"].includes(status))
       return <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">Confirmed</span>
     if (status === "pending")
       return <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full">Pending</span>
-    if (["failed","rejected"].includes(status))
+    if (["failed", "rejected"].includes(status))
       return <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full">Failed</span>
     return null
   }
 
-  const balance        = wallet ? Number(wallet.balance)        : 0
-  const totalEarned    = wallet ? Number(wallet.total_earned)   : 0
-  const totalWithdrawn = wallet ? Number(wallet.total_withdrawn): 0
-  const coins          = wallet ? Number(wallet.coins)          : 0
+  const balance = wallet ? Number(wallet.balance) : 0
+  const totalEarned = wallet ? Number(wallet.total_earned) : 0
+  const totalWithdrawn = wallet ? Number(wallet.total_withdrawn) : 0
+  const coins = wallet ? Number(wallet.coins) : 0
 
   return (
-    <div className="min-h-screen bg-[#080812] text-white p-4 flex flex-col gap-4 pb-24">
-      {/* HEADER */}
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0a1a] to-[#080812] text-white p-4 flex flex-col gap-4 pb-24">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Wallet</h1>
         <div className="flex items-center gap-2">
-          {/* Live indicator */}
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
-            isLive
+          <Wallet className="text-purple-400" size={24} />
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Wallet</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all ${isLive
               ? "bg-green-500/15 text-green-400 border border-green-500/20"
               : "bg-white/5 text-gray-500 border border-white/5"
-          }`}>
+            }`}>
             {isLive
               ? <><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" /></span> Live</>
-              : <><WifiOff size={10} /> Offline</>
-            }
+              : <><WifiOff size={10} /> Offline</>}
           </div>
           <button onClick={handleRefresh} disabled={isRefreshing}
             className="p-2 rounded-lg bg-white/5 active:scale-95 transition-transform">
@@ -327,55 +289,61 @@ export function WalletScreen({
         </div>
       </div>
 
-      {/* BALANCE CARD */}
-      <div className="bg-gradient-to-br from-[#1a1040] to-[#0f0825] border border-purple-900/30 p-5 rounded-2xl shadow-xl">
-        <p className="text-gray-400 text-sm">Available Balance</p>
+      {/* Balance Card */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#1a1040] via-[#120b2e] to-[#0f0825] border border-purple-900/30 p-5 rounded-2xl shadow-2xl">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/20 rounded-full blur-3xl -mr-16 -mt-16" />
+        <p className="text-gray-400 text-sm flex items-center gap-1">💰 Available Balance</p>
         <p className="text-4xl font-bold mt-1 text-white">${balance.toFixed(2)}</p>
         <p className="text-gray-500 text-sm mt-1">USDT</p>
-        <div className="flex gap-3 mt-5">
+        <div className="flex gap-3 mt-5 relative z-10">
           <button onClick={() => setShowDeposit(true)}
-            className="flex-1 bg-purple-600 hover:bg-purple-500 active:scale-95 transition-all py-3 rounded-xl flex items-center justify-center gap-2 font-semibold shadow-lg shadow-purple-900/40">
+            className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 active:scale-95 transition-all py-3 rounded-xl flex items-center justify-center gap-2 font-semibold shadow-lg shadow-purple-900/40">
             <ArrowDownToLine size={18} /> Deposit
           </button>
           <button onClick={() => setShowWithdraw(true)}
-            className="flex-1 bg-orange-500 hover:bg-orange-400 active:scale-95 transition-all py-3 rounded-xl flex items-center justify-center gap-2 font-semibold shadow-lg shadow-orange-900/40">
+            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 active:scale-95 transition-all py-3 rounded-xl flex items-center justify-center gap-2 font-semibold shadow-lg shadow-orange-900/40">
             <ArrowUpFromLine size={18} /> Withdraw
           </button>
         </div>
       </div>
 
-      {/* CONFIGURED DEPOSIT ADDRESS */}
+      {/* Configured Deposit Address */}
       {displayAddress && (
         <div className="bg-[#111125] border border-white/5 p-4 rounded-2xl">
-          <p className="text-sm text-gray-400 mb-3">Your TRC20 Deposit Address</p>
+          <p className="text-sm text-gray-400 mb-3 flex items-center gap-1">🏦 Your TRC20 Deposit Address</p>
           <div className="flex items-center gap-2 bg-black/40 rounded-xl p-2">
             <p className="flex-1 text-xs text-gray-300 truncate font-mono px-1">{displayAddress}</p>
             <button onClick={copyDisplayAddress} className="p-2 bg-white/10 rounded-lg active:scale-90 transition-transform flex-shrink-0">
               {copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} className="text-gray-300" />}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Only send USDT (TRC20) to this address. Other tokens will be lost.</p>
+          <p className="text-xs text-gray-500 mt-2">⚠️ Only send USDT (TRC20) to this address. Other tokens will be lost.</p>
         </div>
       )}
 
-      {/* STATS */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: "Total Earned",  value: `$${totalEarned.toFixed(2)}`,    color: "text-green-400"  },
-          { label: "Withdrawn",     value: `$${totalWithdrawn.toFixed(2)}`, color: "text-white"      },
-          { label: "Coins",         value: String(coins),                   color: "text-purple-400" },
-        ].map((s) => (
-          <div key={s.label} className="bg-[#111125] border border-white/5 p-3 rounded-2xl text-center">
-            <p className="text-xs text-gray-400 mb-1">{s.label}</p>
-            <p className={`font-bold text-sm ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+        <div className="bg-[#111125] border border-white/5 p-3 rounded-2xl text-center">
+          <TrendingUp size={16} className="text-green-400 mx-auto mb-1" />
+          <p className="text-xs text-gray-400 mb-0.5">Total Earned</p>
+          <p className="font-bold text-sm text-green-400">${totalEarned.toFixed(2)}</p>
+        </div>
+        <div className="bg-[#111125] border border-white/5 p-3 rounded-2xl text-center">
+          <ArrowUpFromLine size={16} className="text-orange-400 mx-auto mb-1" />
+          <p className="text-xs text-gray-400 mb-0.5">Withdrawn</p>
+          <p className="font-bold text-sm text-white">${totalWithdrawn.toFixed(2)}</p>
+        </div>
+        <div className="bg-[#111125] border border-white/5 p-3 rounded-2xl text-center">
+          <Award size={16} className="text-purple-400 mx-auto mb-1" />
+          <p className="text-xs text-gray-400 mb-0.5">Coins</p>
+          <p className="font-bold text-sm text-purple-400">{coins}</p>
+        </div>
       </div>
 
-      {/* TRANSACTION HISTORY */}
+      {/* Transaction History */}
       <div className="bg-[#111125] border border-white/5 p-4 rounded-2xl flex-1">
         <div className="flex items-center justify-between mb-3">
-          <p className="font-semibold text-base">Transaction History</p>
+          <p className="font-semibold text-base flex items-center gap-1"><History size={16} /> History</p>
           {isLive && (
             <span className="text-[10px] text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
               Auto-updating
@@ -385,9 +353,8 @@ export function WalletScreen({
         <div className="flex gap-1 bg-black/30 rounded-xl p-1 mb-4">
           {(["all", "earnings", "withdrawals", "bonuses"] as Tab[]).map((t) => (
             <button key={t} onClick={() => setActiveTab(t)}
-              className={`flex-1 py-1.5 text-xs rounded-lg capitalize transition-all ${
-                activeTab === t ? "bg-purple-700 text-white font-semibold" : "text-gray-400 hover:text-gray-200"
-              }`}>{t}</button>
+              className={`flex-1 py-1.5 text-xs rounded-lg capitalize transition-all ${activeTab === t ? "bg-purple-700 text-white font-semibold" : "text-gray-400 hover:text-gray-200"
+                }`}>{t}</button>
           ))}
         </div>
         {loadingTx ? (
@@ -400,15 +367,13 @@ export function WalletScreen({
             <p className="text-sm">No transactions yet</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
             {filteredTransactions.map((tx) => (
               <div key={tx.id}
-                className={`flex items-center gap-3 py-2 border-b border-white/5 last:border-0 transition-colors duration-700 ${
-                  flashId === tx.id ? "bg-green-500/10 rounded-lg px-1" : ""
-                }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  Number(tx.amount) > 0 ? "bg-green-500/20" : "bg-red-500/20"
-                }`}>
+                className={`flex items-center gap-3 py-2 border-b border-white/5 last:border-0 transition-colors duration-700 ${flashId === tx.id ? "bg-green-500/10 rounded-lg px-1" : ""
+                  }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${Number(tx.amount) > 0 ? "bg-green-500/20" : "bg-red-500/20"
+                  }`}>
                   {Number(tx.amount) > 0
                     ? <ArrowDownToLine size={14} className="text-green-400" />
                     : <ArrowUpFromLine size={14} className="text-red-400" />}
@@ -429,22 +394,20 @@ export function WalletScreen({
         )}
       </div>
 
-      {/* ══ DEPOSIT MODAL ══ */}
+      {/* ==================== DEPOSIT MODAL ==================== */}
       {showDeposit && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) closeDeposit() }}>
-          <div className="bg-[#0f0f23] border border-white/10 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
-            {/* ── Fixed header ── */}
+          <div className="bg-[#0f0f23] border border-white/10 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col animate-slide-up">
             <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
               <h2 className="text-lg font-bold">
                 {depositStep === "choose_network" ? "Deposit USDT"
                   : depositStep === "waiting_payment" ? "Send Payment"
-                  : "Deposit Confirmed!"}
+                    : "Deposit Confirmed!"}
               </h2>
               <button onClick={closeDeposit} className="p-2 rounded-lg bg-white/10 active:scale-90"><X size={16} /></button>
             </div>
 
-            {/* ── Scrollable content ── */}
             <div className="flex-1 overflow-y-auto px-6">
               {depositStep === "choose_network" && (
                 <div className="flex flex-col gap-4 pb-2">
@@ -453,13 +416,12 @@ export function WalletScreen({
                     <div className="grid grid-cols-3 gap-2">
                       {(["tron", "eth", "bsc"] as Network[]).map((net) => (
                         <button key={net} onClick={() => setSelectedNetwork(net)}
-                          className={`py-3 rounded-xl text-xs font-semibold border transition-all ${
-                            selectedNetwork === net
+                          className={`py-3 rounded-xl text-xs font-semibold border transition-all ${selectedNetwork === net
                               ? "border-purple-500 bg-purple-600/20 text-purple-300"
                               : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10"
-                          }`}>
-                          {net === "tron" ? "TRC20" : net === "eth" ? "ERC20" : "BEP20"}
-                          <br /><span className="text-[10px] opacity-70">{net === "tron" ? "Tron" : net === "eth" ? "Ethereum" : "BSC"}</span>
+                            }`}>
+                          {NETWORK_CONFIG[net].label}
+                          <br /><span className="text-[10px] opacity-70">{NETWORK_CONFIG[net].fullName}</span>
                         </button>
                       ))}
                     </div>
@@ -473,7 +435,7 @@ export function WalletScreen({
                         className="flex-1 bg-transparent py-3 text-white outline-none placeholder:text-gray-600" />
                       <span className="text-gray-500 text-xs">USDT</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Minimum deposit: $15.00</p>
+                    <p className="text-xs text-gray-500 mt-1">💰 Minimum deposit: $15.00</p>
                   </div>
                   {depositError && <p className="text-red-400 text-xs bg-red-500/10 p-2 rounded-lg">{depositError}</p>}
                 </div>
@@ -481,16 +443,16 @@ export function WalletScreen({
 
               {depositStep === "waiting_payment" && depositInfo && (
                 <div className="flex flex-col gap-4 pb-2">
-                  <div className="bg-black/30 border border-white/10 rounded-2xl p-4">
-                    <p className="text-xs text-gray-400 mb-1">Send exactly</p>
+                  <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-2xl p-4">
+                    <p className="text-xs text-gray-400 mb-1">📤 Send exactly</p>
                     <p className="text-2xl font-bold text-purple-300">
                       {depositInfo.pay_amount ?? `$${depositAmount}`}
                       <span className="text-sm ml-2 text-gray-400">{depositInfo.pay_currency?.toUpperCase() ?? "USDT"}</span>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Via {NETWORK_LABELS[selectedNetwork]}</p>
+                    <p className="text-xs text-gray-500 mt-1">Via {NETWORK_CONFIG[selectedNetwork].label} ({NETWORK_CONFIG[selectedNetwork].fullName})</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-2">To this address</p>
+                    <p className="text-xs text-gray-400 mb-2">📍 To this address</p>
                     <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-3">
                       <p className="flex-1 text-xs font-mono text-gray-200 break-all">{depositInfo.payment_address}</p>
                       <button onClick={() => copyDepositAddr(depositInfo!.payment_address)}
@@ -500,17 +462,16 @@ export function WalletScreen({
                     </div>
                   </div>
                   {depositInfo.expiry && countdown !== null && (
-                    <div className={`flex items-center justify-between gap-2 rounded-xl p-3 border transition-colors ${
-                      countdown === 0
+                    <div className={`flex items-center justify-between rounded-xl p-3 border transition-colors ${countdown === 0
                         ? "bg-red-500/10 border-red-500/20"
                         : countdown < 120
-                        ? "bg-orange-500/10 border-orange-500/20"
-                        : "bg-yellow-500/10 border-yellow-500/20"
-                    }`}>
+                          ? "bg-orange-500/10 border-orange-500/20"
+                          : "bg-yellow-500/10 border-yellow-500/20"
+                      }`}>
                       <div className="flex items-center gap-2">
                         <Clock size={14} className={countdown === 0 ? "text-red-400" : countdown < 120 ? "text-orange-400" : "text-yellow-400"} />
                         <p className={`text-xs font-medium ${countdown === 0 ? "text-red-300" : countdown < 120 ? "text-orange-300" : "text-yellow-300"}`}>
-                          {countdown === 0 ? "Address expired" : "Address expires in"}
+                          {countdown === 0 ? "Address expired" : "⏳ Address expires in"}
                         </p>
                       </div>
                       {countdown > 0 && (
@@ -522,9 +483,7 @@ export function WalletScreen({
                   )}
                   <div className="bg-purple-900/20 border border-purple-900/30 rounded-xl p-3">
                     <p className="text-xs text-gray-400">
-                      {depositInfo.mode === "nowpayments"
-                        ? "Your deposit will be automatically verified via NOWPayments and credited within 1–30 minutes after confirmation."
-                        : "After sending, click Check Status. Deposits typically confirm within 1–30 minutes."}
+                      🔄 Your deposit will be automatically verified and credited within 1–30 minutes after blockchain confirmation.
                     </p>
                   </div>
                 </div>
@@ -532,22 +491,21 @@ export function WalletScreen({
 
               {depositStep === "done" && (
                 <div className="flex flex-col items-center gap-4 py-6">
-                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center animate-bounce">
                     <Check size={32} className="text-green-400" />
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-green-400">Deposit Confirmed!</p>
+                    <p className="text-lg font-bold text-green-400">Deposit Confirmed! 🎉</p>
                     <p className="text-gray-400 text-sm mt-1">Your balance has been updated.</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* ── Fixed footer — always visible ── */}
             <div className="flex-shrink-0 px-6 pt-3 pb-8 border-t border-white/5 bg-[#0f0f23]">
               {depositStep === "choose_network" && (
                 <button onClick={handleCreateDeposit} disabled={depositLoading}
-                  className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all">
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all">
                   {depositLoading
                     ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</>
                     : <>Continue <ChevronRight size={16} /></>}
@@ -555,7 +513,6 @@ export function WalletScreen({
               )}
               {depositStep === "waiting_payment" && (
                 <div className="flex flex-col gap-2">
-                  {/* Auto-check status bar */}
                   {countdown !== 0 && (
                     <div className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2">
                       <div className="flex items-center gap-2">
@@ -582,38 +539,38 @@ export function WalletScreen({
               )}
               {depositStep === "done" && (
                 <button onClick={closeDeposit}
-                  className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl font-semibold active:scale-95 transition-all">Done</button>
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 py-3 rounded-xl font-semibold active:scale-95 transition-all">Done</button>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* ══ WITHDRAW MODAL ══ */}
+      {/* ==================== WITHDRAW MODAL ==================== */}
       {showWithdraw && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) closeWithdraw() }}>
-          <div className="bg-[#0f0f23] border border-white/10 rounded-t-3xl w-full max-w-lg p-6 pb-10 shadow-2xl">
+          <div className="bg-[#0f0f23] border border-white/10 rounded-t-3xl w-full max-w-lg p-6 pb-10 shadow-2xl animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold">Withdraw USDT</h2>
               <button onClick={closeWithdraw} className="p-2 rounded-lg bg-white/10 active:scale-90"><X size={16} /></button>
             </div>
             {withdrawSuccess ? (
               <div className="flex flex-col items-center gap-4 py-4">
-                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center animate-bounce">
                   <Check size={32} className="text-green-400" />
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-green-400">Request Submitted!</p>
+                  <p className="text-lg font-bold text-green-400">Request Submitted! ✅</p>
                   <p className="text-gray-400 text-sm mt-1">Your withdrawal is pending admin approval.</p>
                 </div>
                 <button onClick={closeWithdraw}
-                  className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl font-semibold active:scale-95 transition-all">Done</button>
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 py-3 rounded-xl font-semibold active:scale-95 transition-all">Done</button>
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                <div className="bg-[#1a1040] rounded-xl p-3 flex items-center justify-between">
-                  <p className="text-xs text-gray-400">Available Balance</p>
+                <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl p-3 flex items-center justify-between">
+                  <p className="text-xs text-gray-400">💰 Available Balance</p>
                   <p className="text-sm font-bold text-purple-300">${balance.toFixed(2)} USDT</p>
                 </div>
                 <div>
@@ -624,28 +581,44 @@ export function WalletScreen({
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       className="flex-1 bg-transparent py-3 text-white outline-none placeholder:text-gray-600" />
                     <button onClick={() => setWithdrawAmount(String(balance))}
-                      className="text-xs text-purple-400 px-2">MAX</button>
+                      className="text-xs text-purple-400 px-2 font-semibold hover:text-purple-300">MAX</button>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-2">USDT Wallet Address (TRC20)</p>
+                  <p className="text-xs text-gray-400 mb-2">📎 USDT Wallet Address (TRC20)</p>
                   <input type="text" placeholder="Enter your TRC20 wallet address..." value={withdrawAddress}
                     onChange={(e) => setWithdrawAddress(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-white outline-none placeholder:text-gray-600 text-sm" />
                 </div>
                 {withdrawError && <p className="text-red-400 text-xs bg-red-500/10 p-2 rounded-lg">{withdrawError}</p>}
                 <button onClick={handleWithdraw} disabled={withdrawLoading}
-                  className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all">
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 disabled:opacity-50 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all">
                   {withdrawLoading
                     ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</>
                     : <><ArrowUpFromLine size={18} /> Submit Withdrawal</>}
                 </button>
-                <p className="text-xs text-gray-500 text-center">Withdrawals are reviewed and processed by an admin within 24 hours.</p>
+                <p className="text-xs text-gray-500 text-center">⏱️ Withdrawals are reviewed and processed by an admin within 24 hours.</p>
               </div>
             )}
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
     </div>
   )
 }
