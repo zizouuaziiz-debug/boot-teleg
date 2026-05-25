@@ -5,18 +5,25 @@ import { createPayment, isConfigured } from "@/lib/nowpayments";
 export async function POST(req: NextRequest) {
   const supabase   = getSupabaseAdmin();
   const telegramId = req.headers.get("x-telegram-id");
-  if (!telegramId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  
+  if (!telegramId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const { amount, network = "tron" } = body as { amount?: number; network?: "tron" | "eth" | "bsc" };
 
-  if (!amount || isNaN(Number(amount)) || Number(amount) < 15)
+  // ✅ تم إصلاح الخطأ: إزالة السطر المكرر
+  if (!amount || isNaN(Number(amount)) || Number(amount) < 15) {
     return NextResponse.json({ error: "Minimum deposit is $15" }, { status: 400 });
-    return NextResponse.json({ error: "Minimum deposit is $1" }, { status: 400 });
+  }
 
   const { data: user } = await supabase.from("users").select("id")
     .eq("telegram_id", telegramId).maybeSingle();
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
 
   const numAmount = Number(amount);
   const baseUrl   = process.env.NEXT_PUBLIC_APP_URL || `https://${req.headers.get("host")}`;
