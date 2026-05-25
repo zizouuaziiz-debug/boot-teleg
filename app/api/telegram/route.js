@@ -5,7 +5,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 bot.start(async (ctx) => {
 
   await ctx.replyWithPhoto(
-    "https://boot-teleg-psi.vercel.app/myimage.jpg", // صورتك
+    "https://boot-teleg-psi.vercel.app/myimage.png", // صورتك
 
     {
       caption: `💰 Spin & Win UP TO $10!
