@@ -1,32 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react"
-import {
-  Play, CheckCircle2, ExternalLink, MessageCircle, Globe,
-  UserPlus, Calendar, Gift,
-} from "lucide-react"
+import { Gift } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/context/user-context"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Task {
-  id: string; title: string; description: string; reward: number
-  icon: string; action_url: string | null; task_type: string; completed?: boolean
-}
-
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SPIN_PRIZES = ["$0.10", "$0.50", "$1.00", "$0.25", "$5.00", "$0.05", "$10.00", "$0.15"]
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  MessageCircle, Globe, UserPlus, Calendar, Play, Gift,
-}
 
 // ─── EarnScreen ───────────────────────────────────────────────────────────────
 
@@ -43,13 +28,6 @@ export function EarnScreen() {
   const [winningIdx,      setWinningIdx]      = useState<number | null>(null)
   const [glowFlash,       setGlowFlash]       = useState(false)
 
-  // ── Tasks ─────────────────────────────────────────────────────────────────
-  const [tasks,          setTasks]          = useState<Task[]>([])
-  const [tasksLoading,   setTasksLoading]   = useState(false)
-  const [completingTask, setCompletingTask] = useState<string | null>(null)
-  const [taskDialog,     setTaskDialog]     = useState(false)
-  const [taskReward,     setTaskReward]     = useState(0)
-
   // ─── Fetchers ──────────────────────────────────────────────────────────────
 
   const fetchSpinStatus = useCallback(async () => {
@@ -63,39 +41,7 @@ export function EarnScreen() {
     setSpinLoading(false)
   }, [telegramId, authHeaders])
 
-  const fetchTasks = useCallback(async () => {
-    if (!telegramId) return
-    setTasksLoading(true)
-    try {
-      const res  = await fetch("/api/tasks", { headers: authHeaders })
-      const data = await res.json()
-      if (data.tasks) setTasks(data.tasks)
-    } catch {} finally { setTasksLoading(false) }
-  }, [telegramId, authHeaders])
-
   useEffect(() => { fetchSpinStatus() }, [fetchSpinStatus])
-  useEffect(() => { fetchTasks() },      [fetchTasks])
-
-  // ─── Task handlers ────────────────────────────────────────────────────────
-
-  const handleTask = async (task: Task) => {
-    if (task.completed || completingTask) return
-    if (task.action_url) window.open(task.action_url, "_blank")
-    setCompletingTask(task.id)
-    try {
-      const res  = await fetch("/api/tasks/complete", {
-        method: "POST", headers: authHeaders, body: JSON.stringify({ task_id: task.id }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true } : t))
-        setTaskReward(task.reward)
-        setTaskDialog(true)
-        setTimeout(() => setTaskDialog(false), 2500)
-        refreshWallet()
-      }
-    } catch {} finally { setCompletingTask(null) }
-  }
 
   // ─── Spin handlers ────────────────────────────────────────────────────────
 
@@ -143,8 +89,6 @@ export function EarnScreen() {
     setSpinsRemaining(prev => Math.max(0, (prev ?? 1) - 1))
     setTimeout(() => revealWin(idx, SPIN_PRIZES[idx], false), 4000)
   }
-
-  const completedCount = tasks.filter(t => t.completed).length
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -243,41 +187,6 @@ export function EarnScreen() {
         </CardContent>
       </Card>
 
-      {/* ══ Tasks ════════════════════════════════════════════════════════════ */}
-      {tasks.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Tasks</h3>
-            <Badge variant="outline" className="border-primary text-primary">{completedCount}/{tasks.length}</Badge>
-          </div>
-          {tasksLoading ? Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
-          )) : tasks.map(task => {
-            const IconComp = ICON_MAP[task.icon] ?? Gift
-            return (
-              <Card key={task.id} className={cn("glass-card", task.completed && "opacity-60")}>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 flex-shrink-0">
-                    <IconComp className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm truncate">{task.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{task.description}</p>
-                    <p className="text-xs font-semibold text-primary mt-0.5">+${task.reward.toFixed(2)} USDT</p>
-                  </div>
-                  <Button size="sm"
-                    className={cn("flex-shrink-0", task.completed ? "bg-green-600 hover:bg-green-600 cursor-default" : "primary-gradient")}
-                    disabled={task.completed || completingTask === task.id}
-                    onClick={() => handleTask(task)}>
-                    {task.completed ? <CheckCircle2 className="h-4 w-4" /> : task.action_url ? <ExternalLink className="h-4 w-4" /> : "Claim"}
-                  </Button>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-
       {/* ══ Prize Won Dialog ═════════════════════════════════════════════════ */}
       <Dialog open={showPrizeDialog} onOpenChange={setShowPrizeDialog}>
         <DialogContent className="glass-card border-primary/20 p-0 max-w-sm overflow-hidden">
@@ -296,25 +205,6 @@ export function EarnScreen() {
             <Button className="mt-6 w-full" onClick={() => setShowPrizeDialog(false)}>
               Awesome!
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ══ Task Reward Dialog ═══════════════════════════════════════════════ */}
-      <Dialog open={taskDialog} onOpenChange={setTaskDialog}>
-        <DialogContent className="glass-card border-primary/20 p-0 max-w-sm overflow-hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Task Completed</DialogTitle>
-            <DialogDescription>Your task reward</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-14 px-6"
-            style={{ background: "linear-gradient(180deg,oklch(0.20 0.10 145/0.4),transparent)" }}>
-            <div className="h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center mb-4 animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-12 w-12 text-green-400" />
-            </div>
-            <p className="text-2xl font-black text-white mb-1">Task Done!</p>
-            <p className="text-3xl font-black text-green-400">+${taskReward.toFixed(2)} USDT</p>
-            <p className="text-xs text-muted-foreground mt-3">Added to your wallet</p>
           </div>
         </DialogContent>
       </Dialog>
