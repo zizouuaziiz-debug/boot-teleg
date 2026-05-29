@@ -108,6 +108,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!tgUser?.id) { setLoading(false); return; }
 
+      console.log("[UserContext] Sending to API - refCode:", refCode);
+
       const res = await fetch("/api/auth/telegram", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -147,12 +149,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       Telegram?: { WebApp?: Record<string, unknown> }
     })?.Telegram?.WebApp;
 
-    // Extract referral code from URL params
-    const urlParams  = new URLSearchParams(window.location.search);
-    const refCode    = urlParams.get("ref") ?? urlParams.get("start") ?? undefined;
+    console.log("[UserContext] Telegram WebApp available:", !!tg);
 
     const tryInit = () => {
       if (!tg) {
+        console.log("[UserContext] No Telegram WebApp, using localStorage fallback");
         // Dev fallback: restore from localStorage
         try {
           const stored = localStorage.getItem("tg_user");
@@ -180,9 +181,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const unsafe     = (tg as Record<string, unknown>).initDataUnsafe as Record<string, unknown> | undefined;
         const tgUser     = unsafe?.user as Record<string, unknown> | undefined;
         const initData   = (tg as Record<string, unknown>).initData as string | undefined;
-        const startParam = (unsafe?.start_param as string | undefined) ?? refCode;
+        
+        // ⭐️ الإصلاح: استخدام start_param من Telegram WebApp مباشرة
+        const startParam = (unsafe?.start_param as string | undefined);
+        
+        console.log("[UserContext] Poll #" + (tries + 1) + " - tgUser:", !!tgUser, "- startParam:", startParam);
 
         if (tgUser?.id) {
+          // تمرير start_param كـ referral_code
           initUser(tgUser, initData, startParam);
           return;
         }
@@ -190,6 +196,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           tries++;
           setTimeout(poll, 250);
         } else {
+          console.log("[UserContext] Timeout waiting for Telegram user data");
           setLoading(false);
         }
       };
