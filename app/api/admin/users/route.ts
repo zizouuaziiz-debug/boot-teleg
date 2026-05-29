@@ -17,9 +17,10 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get("search") ?? "";
   const status = searchParams.get("status") ?? "";
 
+  // ⭐️ إضافة referrals count
   let query = supabase
     .from("users")
-    .select("*, wallets(balance, total_earned, total_withdrawn)", { count: "exact" })
+    .select("*, wallets(balance, total_earned, total_withdrawn), referrals!referrer_id(count)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, from + limit - 1);
 
@@ -29,9 +30,17 @@ export async function GET(req: NextRequest) {
   if (status) query = query.eq("status", status);
 
   const { data: users, count } = await query;
-  return NextResponse.json({ users: users ?? [], total: count ?? 0, page, limit });
+
+  // ⭐️ تحويل البيانات لتشمل عدد الإحالات
+  const usersWithReferralCount = users?.map((user: any) => ({
+    ...user,
+    referral_count: user.referrals?.[0]?.count ?? 0,
+  })) ?? [];
+
+  return NextResponse.json({ users: usersWithReferralCount, total: count ?? 0, page, limit });
 }
 
+// ... باقي الكود (PATCH) يبقى كما هو
 export async function PATCH(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value;
   if (!token || !verifySessionToken(token)) return unauthorized();
@@ -101,7 +110,6 @@ export async function PATCH(req: NextRequest) {
     }
 
     case "delete": {
-      // Clean all related records first to satisfy FK constraints
       for (const table of ["transactions","user_spin_state","user_daily_bonus","mining_sessions","video_watches","user_tasks"]) {
         await supabase.from(table as "transactions").delete().eq("user_id", userId);
       }
