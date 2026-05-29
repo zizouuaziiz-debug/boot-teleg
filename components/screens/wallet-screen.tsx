@@ -387,20 +387,15 @@ export function WalletScreen({
         )}
       </div>
 
-      {/* ============================================================ */}
-      /* ════════════════════════════════════════════════════════════ */
-      /* ══ DEPOSIT MODAL - نسخة معدلة بالكامل (الزر واضح دائماً) ══ */
-      /* ════════════════════════════════════════════════════════════ */
+      {/* DEPOSIT MODAL */}
       {showDeposit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
           onClick={(e) => { if (e.target === e.currentTarget) closeDeposit() }}>
           
-          {/* Modal - ارتفاع ثابت ومناسب */}
           <div className="bg-[#0f0f23] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl flex flex-col"
             style={{ height: "auto", maxHeight: "90vh" }}
             onClick={(e) => e.stopPropagation()}>
             
-            {/* Header - ثابت */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0 border-b border-white/10">
               <h2 className="text-lg font-bold">
                 {depositStep === "choose_network" ? "Deposit USDT"
@@ -412,7 +407,6 @@ export function WalletScreen({
               </button>
             </div>
 
-            {/* Content - منطقة قابلة للتمرير */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {depositStep === "choose_network" && (
                 <>
@@ -464,7 +458,6 @@ export function WalletScreen({
 
               {depositStep === "waiting_payment" && depositInfo && (
                 <>
-                  {/* المبلغ المرسل */}
                   <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 border border-purple-500/30 rounded-xl p-4 text-center">
                     <p className="text-xs text-gray-400 mb-1">🔒 Send exactly</p>
                     <p className="text-2xl font-bold text-purple-300">
@@ -478,7 +471,6 @@ export function WalletScreen({
                     </p>
                   </div>
 
-                  {/* عنوان المحفظة */}
                   <div>
                     <p className="text-xs text-gray-400 mb-2">📍 To this address</p>
                     <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-3">
@@ -490,7 +482,6 @@ export function WalletScreen({
                     </div>
                   </div>
 
-                  {/* مؤقت الانتهاء */}
                   {depositInfo.expiry && countdown !== null && (
                     <div className={`flex items-center justify-between rounded-xl p-3 border ${
                       countdown === 0
@@ -513,7 +504,6 @@ export function WalletScreen({
                     </div>
                   )}
 
-                  {/* معلومات التأكيد */}
                   <div className="bg-purple-900/20 border border-purple-900/30 rounded-xl p-3">
                     <p className="text-xs text-gray-400 text-center">
                       📝 Your deposit will be automatically verified and credited within 1–30 minutes after blockchain confirmation.
@@ -535,7 +525,6 @@ export function WalletScreen({
               )}
             </div>
 
-            {/* Footer - الزر دائماً في الأسفل وواضح */}
             <div className="flex-shrink-0 px-5 py-4 border-t border-white/10 bg-[#0f0f23] rounded-b-2xl">
               {depositStep === "choose_network" && (
                 <button
@@ -553,7 +542,6 @@ export function WalletScreen({
 
               {depositStep === "waiting_payment" && (
                 <div className="flex flex-col gap-2">
-                  {/* شريط التحقق التلقائي */}
                   {countdown !== 0 && (
                     <div className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2">
                       <div className="flex items-center gap-2">
@@ -587,9 +575,7 @@ export function WalletScreen({
         </div>
       )}
 
-      {/* ============================================================ */}
-      /* ══ WITHDRAW MODAL ══ */
-      {/* ============================================================ */}
+      {/* WITHDRAW MODAL */}
       {showWithdraw && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
           onClick={(e) => { if (e.target === e.currentTarget) closeWithdraw() }}>
