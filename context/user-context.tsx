@@ -58,7 +58,6 @@ const UserContext = createContext<UserContextType>({
   setWallet:     () => {},
 });
 
-/** Normalise wallets: Supabase join returns array for 1-to-many */
 function normaliseWallet(raw: Wallet | Wallet[] | null | undefined): Wallet | null {
   if (!raw) return null;
   if (Array.isArray(raw)) return raw[0] ?? null;
@@ -71,12 +70,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [loading,    setLoading]   = useState(true);
   const [telegramId, setTelegramId] = useState<string | null>(null);
 
-  // Stable auth headers for API calls
   const authHeaders: HeadersInit = telegramId
     ? { "Content-Type": "application/json", "x-telegram-id": telegramId }
     : { "Content-Type": "application/json" };
 
-  // ── Realtime wallet subscription ──────────────────────────────────────────
   useRealtimeWallet(user?.id ?? null, (update: WalletUpdate) => {
     setWalletState((prev) =>
       prev
@@ -91,7 +88,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     );
   });
 
-  // ── Public setters ─────────────────────────────────────────────────────────
   const setUser = useCallback((u: UserProfile | null) => {
     setUserState(u);
     if (u) setWalletState(normaliseWallet(u.wallets));
@@ -99,7 +95,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const setWallet = useCallback((w: Wallet | null) => setWalletState(w), []);
 
-  // ── Init user from Telegram ──────────────────────────────────────────────
   const initUser = useCallback(async (
     tgUser:    Record<string, unknown>,
     initData?: string,
@@ -108,7 +103,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!tgUser?.id) { setLoading(false); return; }
 
-      console.log("[UserContext] Sending to API - refCode:", refCode);
+      console.log("[UserContext] 🚀 Sending to API - refCode:", refCode);
 
       const res = await fetch("/api/auth/telegram", {
         method:  "POST",
@@ -131,10 +126,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUserState(u);
         setWalletState(normaliseWallet(u.wallets));
         setTelegramId(String(tgUser.id));
-
-        try {
-          localStorage.setItem("tg_user", JSON.stringify(u));
-        } catch {}
+        try { localStorage.setItem("tg_user", JSON.stringify(u)); } catch {}
       }
     } catch (err) {
       console.error("[UserContext] Auth error:", err);
@@ -143,18 +135,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── Bootstrap from Telegram WebApp SDK ────────────────────────────────────
   useEffect(() => {
     const tg = (window as Window & {
       Telegram?: { WebApp?: Record<string, unknown> }
     })?.Telegram?.WebApp;
 
-    console.log("[UserContext] Telegram WebApp available:", !!tg);
-
     const tryInit = () => {
       if (!tg) {
-        console.log("[UserContext] No Telegram WebApp, using localStorage fallback");
-        // Dev fallback: restore from localStorage
         try {
           const stored = localStorage.getItem("tg_user");
           if (stored) {
@@ -168,7 +155,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Initialise Telegram WebApp
       if (typeof (tg as { ready?: () => void }).ready === "function") {
         (tg as { ready: () => void }).ready();
       }
@@ -178,25 +164,45 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       let tries = 0;
       const poll = () => {
-        const unsafe     = (tg as Record<string, unknown>).initDataUnsafe as Record<string, unknown> | undefined;
-        const tgUser     = unsafe?.user as Record<string, unknown> | undefined;
-        const initData   = (tg as Record<string, unknown>).initData as string | undefined;
+        const tgAny       = tg as Record<string, unknown>;
+        const unsafe      = tgAny.initDataUnsafe as Record<string, unknown> | undefined;
+        const tgUser      = unsafe?.user as Record<string, unknown> | undefined;
+        const initDataStr = tgAny.initData as string | undefined;
         
-        // ⭐️ الإصلاح: استخدام start_param من Telegram WebApp مباشرة
-        const startParam = (unsafe?.start_param as string | undefined);
+        // ⭐️⭐️⭐️ استخراج start_param بثلاث طرق مختلفة ⭐️⭐️⭐️
+        let startParam: string | undefined;
         
-        console.log("[UserContext] Poll #" + (tries + 1) + " - tgUser:", !!tgUser, "- startParam:", startParam);
+        // طريقة 1: من initDataUnsafe
+        if (unsafe?.start_param) {
+          startParam = unsafe.start_param as string;
+        }
+        
+        // طريقة 2: من initData النصية
+        if (!startParam && initDataStr) {
+          try {
+            const params = new URLSearchParams(initDataStr);
+            startParam = params.get("start_param") ?? undefined;
+          } catch {}
+        }
+        
+        // طريقة 3: من window.location (للحالات النادرة)
+        if (!startParam) {
+          const urlParams = new URLSearchParams(window.location.search);
+          startParam = urlParams.get("start") ?? urlParams.get("ref") ?? undefined;
+        }
+        
+        console.log("[UserContext] 📍 Poll #" + (tries + 1));
+        console.log("[UserContext] 👤 tgUser:", !!tgUser);
+        console.log("[UserContext] 🎫 startParam:", startParam);
 
         if (tgUser?.id) {
-          // تمرير start_param كـ referral_code
-          initUser(tgUser, initData, startParam);
+          initUser(tgUser, initDataStr, startParam);
           return;
         }
         if (tries < 20) {
           tries++;
           setTimeout(poll, 250);
         } else {
-          console.log("[UserContext] Timeout waiting for Telegram user data");
           setLoading(false);
         }
       };
@@ -206,7 +212,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     tryInit();
   }, [initUser]);
 
-  // ── Refresh helpers ────────────────────────────────────────────────────────
   const refreshUser = useCallback(async () => {
     if (!telegramId) return;
     try {
