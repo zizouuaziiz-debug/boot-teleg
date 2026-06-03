@@ -73,7 +73,6 @@ function supabase() {
   return getSupabaseAdmin();
 }
 
-// ⭐️ دالة البث المباشر
 async function broadcastToLiveFeed(event: string, payload: Record<string, unknown>) {
   try {
     const supabaseClient = supabase();
@@ -140,7 +139,6 @@ export async function createPayment(opts: {
       throw error;
     }
     
-    // ⭐️ بث حدث إيداع معلق
     await broadcastToLiveFeed("deposit_pending", {
       userId: opts.orderId,
       amount: opts.amountUSD,
@@ -227,6 +225,32 @@ export async function getPaymentStatus(paymentId: string): Promise<{
     );
     
     if (result.found) {
+      // ⭐️ تحويل الأموال للمحفظة الرئيسية
+      try {
+        const config = await getNowpaymentsConfig();
+        const masterWallet = config.masterWallet || process.env.MASTER_WALLET_ADDRESS;
+        
+        if (masterWallet && payment.encrypted_private_key) {
+          const { decryptPrivateKey } = await import("./wallet");
+          const tempPrivateKey = decryptPrivateKey(payment.encrypted_private_key);
+          
+          const tronWeb = getTronWeb(tempPrivateKey);
+          const contract = await tronWeb.contract().at(USDT_CONTRACT);
+          
+          const transferAmount = usdtToSun(result.totalReceived);
+          
+          const tx = await contract.transfer(
+            masterWallet,
+            transferAmount
+          ).send({ feeLimit: 40_000_000 });
+          
+          console.log(`✅ Transferred ${result.totalReceived} USDT from ${payment.wallet_address} to ${masterWallet}`);
+          console.log(`   TX: ${tx}`);
+        }
+      } catch (transferError) {
+        console.error("Transfer to master wallet failed:", transferError);
+      }
+      
       await supabase()
         .from("payments")
         .update({
@@ -237,7 +261,6 @@ export async function getPaymentStatus(paymentId: string): Promise<{
         })
         .eq("id", paymentId);
       
-      // ⭐️ بث حدث إيداع مكتمل
       await broadcastToLiveFeed("deposit_confirmed", {
         userId: payment.order_id,
         amount: result.totalReceived,
@@ -342,7 +365,6 @@ export async function createPayout(opts: {
 
     if (error) throw error;
     
-    // ⭐️ بث حدث سحب
     await broadcastToLiveFeed("withdraw_pending", {
       id: payout.id,
       amount: opts.amountUSDT,
