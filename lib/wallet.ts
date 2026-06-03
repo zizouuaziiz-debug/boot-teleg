@@ -2,7 +2,11 @@
 import { getTronWeb } from './tronweb';
 import crypto from 'crypto';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'change-me-32-chars-secret-key!!';
+// نتأكد إن المفتاح 32 حرف
+const RAW_KEY = process.env.ENCRYPTION_KEY || 'change-me-32-chars-secret-key!!';
+const ENCRYPTION_KEY = RAW_KEY.length === 32 
+  ? RAW_KEY 
+  : RAW_KEY.padEnd(32, '0').substring(0, 32);
 
 function encrypt(text: string): string {
   const iv = crypto.randomBytes(16);
