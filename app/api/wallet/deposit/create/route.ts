@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
   const { amount, network = "tron" } = body as { amount?: number; network?: "tron" | "eth" | "bsc" };
 
   // ✅ تم إصلاح الخطأ: إزالة السطر المكرر
-  if (!amount || isNaN(Number(amount)) || Number(amount) < 15) {
-    return NextResponse.json({ error: "Minimum deposit is $15" }, { status: 400 });
+  if (!amount || isNaN(Number(amount)) || Number(amount) < 5) {
+    return NextResponse.json({ error: "Minimum deposit is $5" }, { status: 400 });
   }
 
   const { data: user } = await supabase.from("users").select("id")
