@@ -14,15 +14,17 @@ export async function GET(req: NextRequest) {
   const page   = Math.max(1, parseInt(searchParams.get("page")  ?? "1"));
   const limit  = Math.min(100, parseInt(searchParams.get("limit") ?? "50"));
   const from   = (page - 1) * limit;
+  const to     = from + limit - 1;
   const search = searchParams.get("search") ?? "";
   const status = searchParams.get("status") ?? "";
+  const sortBy = searchParams.get("sortBy") ?? "created_at";
+  const sortOrder = searchParams.get("sortOrder") ?? "desc";
 
-  // ⭐️ إضافة referrals count
   let query = supabase
     .from("users")
     .select("*, wallets(balance, total_earned, total_withdrawn), referrals!referrer_id(count)", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, from + limit - 1);
+    .order(sortBy, { ascending: sortOrder === "asc" })
+    .range(from, to);
 
   if (search) {
     query = query.or(`first_name.ilike.%${search}%,username.ilike.%${search}%,telegram_id.ilike.%${search}%`);
@@ -31,16 +33,24 @@ export async function GET(req: NextRequest) {
 
   const { data: users, count } = await query;
 
-  // ⭐️ تحويل البيانات لتشمل عدد الإحالات
   const usersWithReferralCount = users?.map((user: any) => ({
     ...user,
     referral_count: user.referrals?.[0]?.count ?? 0,
   })) ?? [];
 
-  return NextResponse.json({ users: usersWithReferralCount, total: count ?? 0, page, limit });
+  const totalPages = Math.ceil((count ?? 0) / limit);
+
+  return NextResponse.json({
+    users: usersWithReferralCount,
+    total: count ?? 0,
+    page,
+    limit,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+  });
 }
 
-// ... باقي الكود (PATCH) يبقى كما هو
 export async function PATCH(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value;
   if (!token || !verifySessionToken(token)) return unauthorized();
