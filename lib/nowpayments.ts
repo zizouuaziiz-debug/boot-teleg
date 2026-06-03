@@ -11,14 +11,12 @@ import { calculateFees, getFeeConfig, checkIncomingTransactions } from "./transa
 
 const BASE = "https://api.nowpayments.io/v1";
 
-/* ── Currency map ─────────────────────────────────────────────────────────── */
 export const NWP_CURRENCY_MAP: Record<string, string> = {
   tron: "usdttrc20",
   eth:  "usdterc20",
   bsc:  "usdtbsc",
 };
 
-/* ── Config ───────────────────────────────────────────────────────────────── */
 export interface NowpaymentsConfig {
   apiKey:    string;
   ipnSecret: string;
@@ -68,15 +66,13 @@ export async function getNowpaymentsConfig(): Promise<NowpaymentsConfig> {
 
 export async function isConfigured(): Promise<boolean> {
   const cfg = await getNowpaymentsConfig();
-  return !!cfg.masterWallet;
+  return !!cfg.masterWallet || !!cfg.apiKey;
 }
 
-/* ── Helper: Supabase admin instance ──────────────────────────────────────── */
 function supabase() {
   return getSupabaseAdmin();
 }
 
-/* ── Create payment invoice ───────────────────────────────────────────────── */
 export async function createPayment(opts: {
   amountUSD:   number;
   network:     "tron" | "eth" | "bsc";
@@ -97,13 +93,18 @@ export async function createPayment(opts: {
     throw new Error("Only TRON network is supported currently");
   }
 
+  // TRC20 - نظامنا
   try {
+    // نتأكد من وجود المحفظة الرئيسية
+    if (!config.masterWallet && !process.env.MASTER_WALLET_ADDRESS) {
+      throw new Error("Master wallet not configured");
+    }
+
     const feeConfig = await getFeeConfig();
     const fees = calculateFees(opts.amountUSD, feeConfig, false);
     const wallet = await generateWallet();
     const expiryDate = new Date(Date.now() + 3600000);
     
-    // حفظ في Supabase
     const { data: payment, error } = await supabase()
       .from("payments")
       .insert({
@@ -122,7 +123,10 @@ export async function createPayment(opts: {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase insert error:", error);
+      throw error;
+    }
     
     return {
       payment_id:      payment.id,
@@ -132,9 +136,9 @@ export async function createPayment(opts: {
       status:          "waiting",
       expiry:          expiryDate.toISOString(),
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create payment error:", error);
-    throw new Error("Failed to create payment");
+    throw new Error(error.message || "Failed to create payment");
   }
 }
 
@@ -171,7 +175,6 @@ async function createPaymentLegacy(
   };
 }
 
-/* ── Check payment status ─────────────────────────────────────────────────── */
 export async function getPaymentStatus(paymentId: string): Promise<{
   status:        string;
   actually_paid: number;
@@ -273,7 +276,6 @@ async function sendCallback(url: string, data: any) {
   }
 }
 
-/* ── Create payout ────────────────────────────────────────────────────────── */
 export async function createPayout(opts: {
   address:     string;
   amountUSDT:  number;
@@ -355,7 +357,6 @@ async function createPayoutLegacy(
   return { id: String(w?.id ?? ""), status: w?.status ?? "created" };
 }
 
-/* ── Verify webhook signature ─────────────────────────────────────────────── */
 export async function verifyWebhookSignature(
   body:      Record<string, unknown>,
   signature: string
