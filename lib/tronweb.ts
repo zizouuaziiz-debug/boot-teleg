@@ -6,9 +6,9 @@ const TRON_SOLIDITY_NODE = process.env.TRON_SOLIDITY_NODE || 'https://api.trongr
 const TRON_EVENT_SERVER = process.env.TRON_EVENT_SERVER || 'https://api.trongrid.io';
 const MASTER_PRIVATE_KEY = process.env.MASTER_PRIVATE_KEY || '';
 
-let tronWebInstance: InstanceType<typeof TronWeb> | null = null;
+let tronWebInstance: any = null;
 
-export function getTronWeb(privateKey?: string): InstanceType<typeof TronWeb> {
+export function getTronWeb(privateKey?: string): any {
   const key = privateKey || MASTER_PRIVATE_KEY;
   
   if (!privateKey && tronWebInstance) {
@@ -29,7 +29,7 @@ export function getTronWeb(privateKey?: string): InstanceType<typeof TronWeb> {
   return instance;
 }
 
-export function getReadOnlyTronWeb(): InstanceType<typeof TronWeb> {
+export function getReadOnlyTronWeb(): any {
   return new TronWeb({
     fullHost: TRON_FULL_NODE,
     solidityNode: TRON_SOLIDITY_NODE,
