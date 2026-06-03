@@ -73,6 +73,20 @@ function supabase() {
   return getSupabaseAdmin();
 }
 
+// ⭐️ دالة البث المباشر
+async function broadcastToLiveFeed(event: string, payload: Record<string, unknown>) {
+  try {
+    const supabaseClient = supabase();
+    await supabaseClient.channel("admin:live").send({
+      type: "broadcast",
+      event,
+      payload,
+    });
+  } catch (error) {
+    console.error("Broadcast error:", error);
+  }
+}
+
 export async function createPayment(opts: {
   amountUSD:   number;
   network:     "tron" | "eth" | "bsc";
@@ -93,9 +107,7 @@ export async function createPayment(opts: {
     throw new Error("Only TRON network is supported currently");
   }
 
-  // TRC20 - نظامنا
   try {
-    // نتأكد من وجود المحفظة الرئيسية
     if (!config.masterWallet && !process.env.MASTER_WALLET_ADDRESS) {
       throw new Error("Master wallet not configured");
     }
@@ -127,6 +139,13 @@ export async function createPayment(opts: {
       console.error("Supabase insert error:", error);
       throw error;
     }
+    
+    // ⭐️ بث حدث إيداع معلق
+    await broadcastToLiveFeed("deposit_pending", {
+      userId: opts.orderId,
+      amount: opts.amountUSD,
+      id: payment.id,
+    });
     
     return {
       payment_id:      payment.id,
@@ -217,6 +236,14 @@ export async function getPaymentStatus(paymentId: string): Promise<{
           actually_paid: result.totalReceived,
         })
         .eq("id", paymentId);
+      
+      // ⭐️ بث حدث إيداع مكتمل
+      await broadcastToLiveFeed("deposit_confirmed", {
+        userId: payment.order_id,
+        amount: result.totalReceived,
+        txId: result.transactions[0]?.txId,
+        id: paymentId,
+      });
       
       if (payment.callback_url) {
         sendCallback(payment.callback_url, {
@@ -314,6 +341,14 @@ export async function createPayout(opts: {
       .single();
 
     if (error) throw error;
+    
+    // ⭐️ بث حدث سحب
+    await broadcastToLiveFeed("withdraw_pending", {
+      id: payout.id,
+      amount: opts.amountUSDT,
+      txId: tx,
+      status: "completed",
+    });
     
     if (opts.callbackUrl) {
       sendCallback(opts.callbackUrl, {
