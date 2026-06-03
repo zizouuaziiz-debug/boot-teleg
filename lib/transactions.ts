@@ -41,29 +41,30 @@ export async function checkIncomingTransactions(
   const tronWeb = getReadOnlyTronWeb();
   
   try {
-    const options = {
-      only_confirmed: true,
-      only_to: true,
-      limit: 50,
-      min_timestamp: sinceTimestamp,
-      contract_address: USDT_CONTRACT,
-    };
+    // استخدام getContract بدل getTransactionsRelated
+    const contract = await tronWeb.contract().at(USDT_CONTRACT);
     
-    const txs = await tronWeb.getTransactionsRelated(address, 'trc20', options);
+    // نجلب transfer events من البلوكتشين
+    const events = await contract.getEvents('Transfer', {
+      sinceTimestamp: sinceTimestamp,
+      filters: { to: address },
+      size: 50,
+      onlyConfirmed: true,
+    });
     
     let totalReceived = 0;
     const validTxs: any[] = [];
     
-    if (txs && txs.length > 0) {
-      for (const tx of txs) {
-        const value = sunToUsdt(tx.value);
+    if (events && events.length > 0) {
+      for (const event of events) {
+        const value = sunToUsdt(Number(event.result.value));
         totalReceived += value;
         validTxs.push({
-          txId: tx.transaction_id,
-          from: tx.from,
-          to: tx.to,
+          txId: event.transaction,
+          from: event.result.from,
+          to: event.result.to,
           amount: value,
-          timestamp: tx.block_timestamp,
+          timestamp: event.block_timestamp,
         });
       }
     }
