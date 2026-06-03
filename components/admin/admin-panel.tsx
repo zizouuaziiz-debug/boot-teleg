@@ -265,11 +265,28 @@ export function AdminPanel() {
           {activeSection === "live"        && <LiveFeedContent />}
           {activeSection === "videos"      && <VideosContent showNotification={showNotification} />}
           {activeSection === "adnetworks"  && <AdNetworksContent />}
-          {activeSection === "settings"    && <SettingsContent settings={settings} onUpdateSettings={updateSettings} onChangePassword={async (cur, nw) => { const res = await fetch("/api/admin/change-password", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword: cur, newPassword: nw }) }); const d = await res.json(); if (d.success || d.ok) { showNotification("success", "Password changed"); return { ok: true } } if (d.error === "setup_required") return { ok: false, sql: d.sql }; showNotification("error", d.error || "Failed"); return { ok: false } } }} />}
-        </div>
-      </main>
-    </div>
-  )
+          {activeSection === "settings" && (
+  <SettingsContent
+    settings={settings}
+    onUpdateSettings={updateSettings}
+    onChangePassword={async (cur, nw) => {
+      const res = await fetch("/api/admin/change-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: cur, newPassword: nw }),
+      })
+      const d = await res.json()
+      if (d.success || d.ok) {
+        showNotification("success", "Password changed successfully")
+        return { ok: true }
+      }
+      if (d.error === "setup_required") return { ok: false, sql: d.sql }
+      showNotification("error", d.error || "Failed to change password")
+      return { ok: false }
+    }}
+  />
+)}
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
