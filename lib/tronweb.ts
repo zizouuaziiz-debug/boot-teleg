@@ -6,10 +6,9 @@ const TRON_SOLIDITY_NODE = process.env.TRON_SOLIDITY_NODE || 'https://api.trongr
 const TRON_EVENT_SERVER = process.env.TRON_EVENT_SERVER || 'https://api.trongrid.io';
 const MASTER_PRIVATE_KEY = process.env.MASTER_PRIVATE_KEY || '';
 
-let tronWebInstance: TronWeb | null = null;
+let tronWebInstance: InstanceType<typeof TronWeb> | null = null;
 
-// ✅ أضفنا privateKey parameter اختياري
-export function getTronWeb(privateKey?: string): TronWeb {
+export function getTronWeb(privateKey?: string): InstanceType<typeof TronWeb> {
   const key = privateKey || MASTER_PRIVATE_KEY;
   
   if (!privateKey && tronWebInstance) {
@@ -30,7 +29,7 @@ export function getTronWeb(privateKey?: string): TronWeb {
   return instance;
 }
 
-export function getReadOnlyTronWeb(): TronWeb {
+export function getReadOnlyTronWeb(): InstanceType<typeof TronWeb> {
   return new TronWeb({
     fullHost: TRON_FULL_NODE,
     solidityNode: TRON_SOLIDITY_NODE,
@@ -41,7 +40,7 @@ export function getReadOnlyTronWeb(): TronWeb {
 export const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 
 export function usdtToSun(amount: number): number {
-  return Math.floor(amount * 1_000_000); // ✅ أضفنا Math.floor للدقة
+  return Math.floor(amount * 1_000_000);
 }
 
 export function sunToUsdt(amount: number): number {
