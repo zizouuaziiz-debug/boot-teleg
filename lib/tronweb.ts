@@ -1,0 +1,39 @@
+// lib/tronweb.ts
+import TronWeb from 'tronweb';
+
+const TRON_FULL_NODE = process.env.TRON_FULL_NODE || 'https://api.trongrid.io';
+const TRON_SOLIDITY_NODE = process.env.TRON_SOLIDITY_NODE || 'https://api.trongrid.io';
+const TRON_EVENT_SERVER = process.env.TRON_EVENT_SERVER || 'https://api.trongrid.io';
+const MASTER_PRIVATE_KEY = process.env.MASTER_PRIVATE_KEY || '';
+
+let tronWebInstance: TronWeb | null = null;
+
+export function getTronWeb(): TronWeb {
+  if (!tronWebInstance) {
+    tronWebInstance = new TronWeb({
+      fullHost: TRON_FULL_NODE,
+      solidityNode: TRON_SOLIDITY_NODE,
+      eventServer: TRON_EVENT_SERVER,
+      privateKey: MASTER_PRIVATE_KEY,
+    });
+  }
+  return tronWebInstance;
+}
+
+export function getReadOnlyTronWeb(): TronWeb {
+  return new TronWeb({
+    fullHost: TRON_FULL_NODE,
+    solidityNode: TRON_SOLIDITY_NODE,
+    eventServer: TRON_EVENT_SERVER,
+  });
+}
+
+export const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+
+export function usdtToSun(amount: number): number {
+  return amount * 1_000_000;
+}
+
+export function sunToUsdt(amount: number): number {
+  return amount / 1_000_000;
+}
