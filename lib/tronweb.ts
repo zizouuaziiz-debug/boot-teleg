@@ -8,16 +8,26 @@ const MASTER_PRIVATE_KEY = process.env.MASTER_PRIVATE_KEY || '';
 
 let tronWebInstance: TronWeb | null = null;
 
-export function getTronWeb(): TronWeb {
-  if (!tronWebInstance) {
-    tronWebInstance = new TronWeb({
-      fullHost: TRON_FULL_NODE,
-      solidityNode: TRON_SOLIDITY_NODE,
-      eventServer: TRON_EVENT_SERVER,
-      privateKey: MASTER_PRIVATE_KEY,
-    });
+// ✅ أضفنا privateKey parameter اختياري
+export function getTronWeb(privateKey?: string): TronWeb {
+  const key = privateKey || MASTER_PRIVATE_KEY;
+  
+  if (!privateKey && tronWebInstance) {
+    return tronWebInstance;
   }
-  return tronWebInstance;
+  
+  const instance = new TronWeb({
+    fullHost: TRON_FULL_NODE,
+    solidityNode: TRON_SOLIDITY_NODE,
+    eventServer: TRON_EVENT_SERVER,
+    privateKey: key,
+  });
+  
+  if (!privateKey) {
+    tronWebInstance = instance;
+  }
+  
+  return instance;
 }
 
 export function getReadOnlyTronWeb(): TronWeb {
@@ -31,7 +41,7 @@ export function getReadOnlyTronWeb(): TronWeb {
 export const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 
 export function usdtToSun(amount: number): number {
-  return amount * 1_000_000;
+  return Math.floor(amount * 1_000_000); // ✅ أضفنا Math.floor للدقة
 }
 
 export function sunToUsdt(amount: number): number {
