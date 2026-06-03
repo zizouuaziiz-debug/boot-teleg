@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface User {
   id: string; telegram_id: string | number; first_name?: string; last_name?: string; username?: string
   balance: number; referrals: number; status: "active" | "suspended" | "banned"; vip: number
@@ -67,13 +69,17 @@ const sidebarItems = [
   { icon: Settings, label: "Settings", id: "settings" },
 ]
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export function AdminPanel() {
   const [activeSection, setActiveSection] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [users, setUsers] = useState<User[]>([])
+  // ⭐️ Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalUsers, setTotalUsers] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
+  // ⭐️ End pagination state
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
   const [settings, setSettings] = useState<AppSettings>(initialSettings)
   const [isLoading, setIsLoading] = useState(false)
@@ -92,6 +98,7 @@ export function AdminPanel() {
       .finally(() => setAuthLoading(false))
   }, [])
 
+  // ⭐️ Updated loadData with pagination
   const loadData = useCallback(async (page = 1) => {
     setIsLoading(true)
     try {
@@ -108,7 +115,8 @@ export function AdminPanel() {
             id: String(u.id), telegram_id: u.telegram_id as string | number,
             first_name: u.first_name as string | undefined, last_name: u.last_name as string | undefined,
             username: u.username as string | undefined, balance: wallets?.balance ?? 0,
-            referrals: (u.referral_count as number) ?? 0, status: (u.status as "active" | "suspended" | "banned") ?? "active",
+            referrals: (u.referral_count as number) ?? 0,
+            status: (u.status as "active" | "suspended" | "banned") ?? "active",
             vip: (u.vip_level as number) ?? 0, joinDate: u.created_at as string,
             totalEarnings: wallets?.total_earned ?? 0, videosWatched: (u.videos_watched as number) ?? 0,
           } satisfies User
@@ -143,6 +151,11 @@ export function AdminPanel() {
     await fetch("/api/admin/logout", { method: "POST", credentials: "include" })
     setIsAuthenticated(false); setUsers([]); setWithdrawals([])
   }
+
+  // ⭐️ Refresh stays on current page
+  const refreshData = useCallback(() => {
+    loadData(currentPage).then(() => showNotification("success", "Data refreshed"))
+  }, [loadData, currentPage, showNotification])
 
   const toggleUserStatus = useCallback(async (userId: string) => {
     const target = users.find(u => u.id === userId)
@@ -184,13 +197,16 @@ export function AdminPanel() {
     showNotification("success", "Withdrawal rejected")
   }, [showNotification, withdrawals])
 
-  const refreshData = useCallback(() => { loadData(currentPage).then(() => showNotification("success", "Refreshed")) }, [loadData, currentPage, showNotification])
+  const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
+    setSettings(prev => ({ ...prev, ...newSettings }))
+    showNotification("success", "Settings saved successfully")
+  }, [showNotification])
 
   const stats = [
-    { label: "Total Users", value: totalUsers.toLocaleString(), icon: Users },
-    { label: "Active Users", value: users.filter(u => u.status === "active").length.toLocaleString(), icon: TrendingUp },
-    { label: "Total Payouts", value: `$${withdrawals.filter(w => w.status === "approved").reduce((s, w) => s + w.amount, 0).toFixed(2)}`, icon: Wallet },
-    { label: "Pending", value: withdrawals.filter(w => w.status === "pending").length.toLocaleString(), icon: PlayCircle },
+    { label: "Total Users", value: totalUsers.toLocaleString(), icon: Users, trend: "up" },
+    { label: "Active Users", value: users.filter(u => u.status === "active").length.toLocaleString(), icon: TrendingUp, trend: "up" },
+    { label: "Total Payouts", value: `$${withdrawals.filter(w => w.status === "approved").reduce((s, w) => s + w.amount, 0).toFixed(2)}`, icon: Wallet, trend: "up" },
+    { label: "Pending", value: withdrawals.filter(w => w.status === "pending").length.toLocaleString(), icon: PlayCircle, trend: "up" },
   ]
 
   if (authLoading) return <div className="flex min-h-screen items-center justify-center bg-background"><RefreshCw className="h-8 w-8 animate-spin text-primary" /></div>
@@ -241,14 +257,15 @@ export function AdminPanel() {
           </div>
         </header>
         <div className="p-6">
-          {activeSection === "dashboard" && <DashboardContent stats={stats} withdrawals={withdrawals} />}
-          {activeSection === "users" && <UsersContent users={users} totalUsers={totalUsers} currentPage={currentPage} totalPages={totalPages} onPageChange={(p) => loadData(p)} onToggleStatus={toggleUserStatus} onUpdateBalance={updateUserBalance} onDeleteUser={deleteUser} onAddBalance={addUserBalance} />}
+          {activeSection === "dashboard"   && <DashboardContent stats={stats} withdrawals={withdrawals} />}
+          {/* ⭐️ Users with pagination props */}
+          {activeSection === "users"       && <UsersContent users={users} totalUsers={totalUsers} currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => loadData(page)} onToggleStatus={toggleUserStatus} onUpdateBalance={updateUserBalance} onDeleteUser={deleteUser} onAddBalance={addUserBalance} />}
           {activeSection === "withdrawals" && <WithdrawalsContent withdrawals={withdrawals} onApprove={approveWithdrawal} onReject={rejectWithdrawal} />}
-          {activeSection === "analytics" && <AnalyticsContent users={users} withdrawals={withdrawals} />}
-          {activeSection === "live" && <LiveFeedContent />}
-          {activeSection === "videos" && <VideosContent showNotification={showNotification} />}
-          {activeSection === "adnetworks" && <AdNetworksContent />}
-          {activeSection === "settings" && <SettingsContent settings={settings} onUpdateSettings={(s) => setSettings(prev => ({ ...prev, ...s }))} onChangePassword={async (cur, nw) => { const res = await fetch("/api/admin/change-password", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword: cur, newPassword: nw }) }); const d = await res.json(); if (d.success || d.ok) { showNotification("success", "Password changed"); return { ok: true } } if (d.error === "setup_required") return { ok: false, sql: d.sql }; showNotification("error", d.error || "Failed"); return { ok: false } }} />}
+          {activeSection === "analytics"   && <AnalyticsContent users={users} withdrawals={withdrawals} />}
+          {activeSection === "live"        && <LiveFeedContent />}
+          {activeSection === "videos"      && <VideosContent showNotification={showNotification} />}
+          {activeSection === "adnetworks"  && <AdNetworksContent />}
+          {activeSection === "settings"    && <SettingsContent settings={settings} onUpdateSettings={updateSettings} onChangePassword={async (cur, nw) => { const res = await fetch("/api/admin/change-password", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword: cur, newPassword: nw }) }); const d = await res.json(); if (d.success || d.ok) { showNotification("success", "Password changed"); return { ok: true } } if (d.error === "setup_required") return { ok: false, sql: d.sql }; showNotification("error", d.error || "Failed"); return { ok: false } } }} />}
         </div>
       </main>
     </div>
@@ -267,11 +284,12 @@ function DashboardContent({ stats, withdrawals }: { stats: any[]; withdrawals: W
   )
 }
 
-// ─── Users ────────────────────────────────────────────────────────────────────
+// ─── Users with Pagination ────────────────────────────────────────────────────
 function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange, onToggleStatus, onUpdateBalance, onDeleteUser, onAddBalance }: {
-  users: User[]; totalUsers: number; currentPage: number; totalPages: number; onPageChange: (page: number) => void
-  onToggleStatus: (id: string) => void; onUpdateBalance: (id: string, balance: number) => void
-  onDeleteUser: (id: string) => void; onAddBalance: (id: string, amount: number) => void
+  users: User[]; totalUsers: number; currentPage: number; totalPages: number
+  onPageChange: (page: number) => void; onToggleStatus: (id: string) => void
+  onUpdateBalance: (id: string, balance: number) => void; onDeleteUser: (id: string) => void
+  onAddBalance: (id: string, amount: number) => void
 }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -291,7 +309,7 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Search users..." className="pl-10 bg-secondary/50" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-32 bg-secondary/50"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-32 bg-secondary/50"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select>
       </div>
       <Card className="glass-card"><CardContent className="p-0">
         <Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Balance</TableHead><TableHead>Referrals</TableHead><TableHead>VIP</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
@@ -309,7 +327,7 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
                       <DropdownMenuItem onClick={() => { setSelectedUser(user); setAddAmount(""); setShowAddDialog(true) }}><PlusCircle className="mr-2 h-4 w-4 text-green-400" />Add Balance</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => { setSelectedUser(user); setEditBalance(user.balance.toString()); setShowEditDialog(true) }}><Eye className="mr-2 h-4 w-4" />Edit Balance</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onToggleStatus(user.id)}>{user.status === "active" ? <><Ban className="mr-2 h-4 w-4" />Suspend</> : <><UserCheck className="mr-2 h-4 w-4" />Activate</>}</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setShowDeleteDialog(true) }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setShowDeleteDialog(true) }}><Trash2 className="mr-2 h-4 w-4" />Delete User</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -319,7 +337,7 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
         </Table>
       </CardContent></Card>
 
-      {/* Pagination */}
+      {/* ⭐️ Pagination Bar */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Showing {filtered.length} of {totalUsers} users · Page {currentPage} of {totalPages}</p>
         <div className="flex gap-2">
@@ -328,7 +346,6 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
         </div>
       </div>
 
-      {/* Dialogs */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}><DialogContent><DialogHeader><DialogTitle>Delete User</DialogTitle><DialogDescription>Delete {selectedUser ? userDisplayName(selectedUser) : ""}?</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button><Button variant="destructive" onClick={() => { if (selectedUser) { onDeleteUser(selectedUser.id); setShowDeleteDialog(false); setSelectedUser(null) } }}>Delete</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}><DialogContent><DialogHeader><DialogTitle>Edit Balance</DialogTitle><DialogDescription>Current: ${selectedUser?.balance.toFixed(2)}</DialogDescription></DialogHeader><div className="py-4"><Input type="number" value={editBalance} onChange={e => setEditBalance(e.target.value)} step="0.01" min="0" /></div><DialogFooter><Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button><Button className="primary-gradient" onClick={() => { if (selectedUser && editBalance) { onUpdateBalance(selectedUser.id, parseFloat(editBalance)); setShowEditDialog(false) } }}>Save</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}><DialogContent><DialogHeader><DialogTitle className="flex items-center gap-2"><PlusCircle className="h-5 w-5 text-green-400" />Add Balance</DialogTitle><DialogDescription>Credit USDT to {selectedUser ? userDisplayName(selectedUser) : ""} (current: ${selectedUser?.balance.toFixed(2)})</DialogDescription></DialogHeader><div className="py-4 space-y-4"><Input type="number" value={addAmount} onChange={e => setAddAmount(e.target.value)} className="bg-secondary/50" step="0.01" min="0.01" placeholder="0.00" autoFocus />{addAmount && parseFloat(addAmount) > 0 && <div className="rounded-lg bg-green-500/10 border border-green-500/30 px-4 py-3"><p className="text-xl font-bold text-green-400">${((selectedUser?.balance ?? 0) + parseFloat(addAmount)).toFixed(2)} USDT</p></div>}</div><DialogFooter><Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button><Button className="primary-gradient" disabled={!addAmount || parseFloat(addAmount) <= 0} onClick={() => { if (selectedUser && addAmount && parseFloat(addAmount) > 0) { onAddBalance(selectedUser.id, parseFloat(addAmount)); setShowAddDialog(false); setAddAmount("") } }}>Add ${parseFloat(addAmount || "0").toFixed(2)} USDT</Button></DialogFooter></DialogContent></Dialog>
@@ -352,23 +369,19 @@ function WithdrawalsContent({ withdrawals, onApprove, onReject }: { withdrawals:
   return <div className="space-y-6"><Tabs defaultValue="pending"><TabsList className="bg-secondary/50"><TabsTrigger value="pending">Pending ({pending.length})</TabsTrigger><TabsTrigger value="approved">Approved ({approved.length})</TabsTrigger><TabsTrigger value="rejected">Rejected ({rejected.length})</TabsTrigger></TabsList><TabsContent value="pending" className="mt-4">{renderTable(pending, true)}</TabsContent><TabsContent value="approved" className="mt-4">{renderTable(approved, false)}</TabsContent><TabsContent value="rejected" className="mt-4">{renderTable(rejected, false)}</TabsContent></Tabs></div>
 }
 
-// ─── Analytics / LiveFeed / Videos / AdNetworks / Settings (نفس الكود السابق بدون تغيير) ───
+// ─── Placeholder Sections (keep your originals if you have them) ──────────────
 function AnalyticsContent({ users, withdrawals }: { users: User[]; withdrawals: Withdrawal[] }) {
   return <div className="text-center py-16 text-muted-foreground">Analytics coming soon</div>
 }
-
 function LiveFeedContent() {
   return <div className="text-center py-16 text-muted-foreground">Live Feed coming soon</div>
 }
-
 function VideosContent({ showNotification }: { showNotification: (t: "success"|"error", m: string) => void }) {
   return <div className="text-center py-16 text-muted-foreground">Videos management coming soon</div>
 }
-
 function AdNetworksContent() {
   return <div className="text-center py-16 text-muted-foreground">Ad Networks coming soon</div>
 }
-
 function SettingsContent({ settings, onUpdateSettings, onChangePassword }: { settings: AppSettings; onUpdateSettings: (s: Partial<AppSettings>) => void; onChangePassword: (current: string, newPass: string) => Promise<{ ok: boolean; sql?: string }> }) {
   return <div className="text-center py-16 text-muted-foreground">Settings coming soon</div>
 }
