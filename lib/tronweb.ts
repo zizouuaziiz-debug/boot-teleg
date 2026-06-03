@@ -1,14 +1,14 @@
 // lib/tronweb.ts
-import TronWeb from 'tronweb';
+import { TronWeb } from 'tronweb';
 
 const TRON_FULL_NODE = process.env.TRON_FULL_NODE || 'https://api.trongrid.io';
 const TRON_SOLIDITY_NODE = process.env.TRON_SOLIDITY_NODE || 'https://api.trongrid.io';
 const TRON_EVENT_SERVER = process.env.TRON_EVENT_SERVER || 'https://api.trongrid.io';
 const MASTER_PRIVATE_KEY = process.env.MASTER_PRIVATE_KEY || '';
 
-let tronWebInstance: any = null;
+let tronWebInstance: TronWeb | null = null;
 
-export function getTronWeb(privateKey?: string): any {
+export function getTronWeb(privateKey?: string): TronWeb {
   const key = privateKey || MASTER_PRIVATE_KEY;
   
   if (!privateKey && tronWebInstance) {
@@ -29,7 +29,7 @@ export function getTronWeb(privateKey?: string): any {
   return instance;
 }
 
-export function getReadOnlyTronWeb(): any {
+export function getReadOnlyTronWeb(): TronWeb {
   return new TronWeb({
     fullHost: TRON_FULL_NODE,
     solidityNode: TRON_SOLIDITY_NODE,
