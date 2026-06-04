@@ -98,9 +98,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     } catch {}
   }, [telegramId, authHeaders]);
 
-  useEffect(() => {
-    fetchBonusState();
-  }, [fetchBonusState]);
+  useEffect(() => { fetchBonusState(); }, [fetchBonusState]);
 
   const fetchSpinState = useCallback(async () => {
     if (!telegramId) return;
@@ -114,9 +112,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     } catch (error) {}
   }, [telegramId, authHeaders]);
 
-  useEffect(() => {
-    fetchSpinState();
-  }, [fetchSpinState]);
+  useEffect(() => { fetchSpinState(); }, [fetchSpinState]);
 
   const fetchMysteryBox = useCallback(async () => {
     if (!telegramId) return;
@@ -140,10 +136,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     if (!mysteryReady || mysteryOpening) return;
     setMysteryOpening(true);
     try {
-      const res = await fetch("/api/mysterybox", {
-        method: "POST",
-        headers: authHeaders,
-      });
+      const res = await fetch("/api/mysterybox", { method: "POST", headers: authHeaders });
       const data = await res.json();
       if (data.success) {
         setMysteryReward(data.reward);
@@ -153,9 +146,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         await fetchSpinState();
         setTimeout(() => setMysteryOpen(false), 4000);
       }
-    } catch {} finally {
-      setMysteryOpening(false);
-    }
+    } catch {} finally { setMysteryOpening(false); }
   };
 
   const fetchReferralStats = useCallback(async () => {
@@ -181,10 +172,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     if (!canClaim || bonusClaiming) return;
     setBonusClaiming(true);
     try {
-      const res = await fetch("/api/daily-bonus", {
-        method: "POST",
-        headers: authHeaders,
-      });
+      const res = await fetch("/api/daily-bonus", { method: "POST", headers: authHeaders });
       const data = await res.json();
       if (data.success) {
         setBonusResult(data.reward);
@@ -195,9 +183,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         await refreshWallet();
         setTimeout(() => setBonusClaimOpen(false), 3000);
       }
-    } catch {} finally {
-      setBonusClaiming(false);
-    }
+    } catch {} finally { setBonusClaiming(false); }
   };
 
   const vipLevel = user?.vip_level ?? 0;
@@ -212,19 +198,15 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   ];
 
   return (
-    <div className="flex flex-col gap-5 p-4 pb-24 safe-area-top animate-in fade-in duration-500">
+    <div className="flex flex-col gap-4 p-4 pb-24 safe-area-top animate-in fade-in duration-500">
       
       {/* ═══════ HEADER ═══════ */}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
             <Avatar className="h-11 w-11 ring-2 ring-purple-500/50 shadow-lg shadow-purple-500/20">
-              {user?.photo_url && (
-                <AvatarImage src={user.photo_url} alt={displayName} />
-              )}
-              <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-600 text-white text-sm">
-                {avatarInitials}
-              </AvatarFallback>
+              {user?.photo_url && <AvatarImage src={user.photo_url} alt={displayName} />}
+              <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-600 text-white text-sm">{avatarInitials}</AvatarFallback>
             </Avatar>
             {vipLevel > 0 && (
               <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-lg">
@@ -234,8 +216,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
           </div>
           <div>
             <p className="text-xs text-gray-400 flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-purple-400" />
-              Welcome back
+              <Sparkles className="h-3 w-3 text-purple-400" />Welcome back
             </p>
             <h2 className="font-bold text-white">{displayName}</h2>
           </div>
@@ -243,8 +224,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
         <div className="flex items-center gap-2">
           <Badge className={`bg-gradient-to-r ${vipColors[vipLevel] || vipColors[0]} border-0 shadow-lg text-white text-xs`}>
-            <Crown className="h-3 w-3 mr-1" />
-            {vipNames[vipLevel] || "Free"}
+            <Crown className="h-3 w-3 mr-1" />{vipNames[vipLevel] || "Free"}
           </Badge>
           <Button variant="ghost" size="icon" onClick={() => setNotificationsOpen(true)} className="relative">
             <Bell className="h-5 w-5 text-gray-400" />
@@ -256,267 +236,153 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       {/* ═══════ BALANCE - GLASS MORPHISM | CENTERED ═══════ */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10"
         style={{
-          background: "rgba(255, 255, 255, 0.03)",
+          background: "linear-gradient(135deg, rgba(88, 28, 255, 0.1), rgba(147, 51, 234, 0.08), rgba(219, 39, 119, 0.05))",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
         }}
       >
-        <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -ml-16 -mb-16" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-500/20 rounded-full blur-3xl -ml-16 -mb-16" />
         
         <div className="relative z-10 flex flex-col items-center justify-center py-10 px-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-4 backdrop-blur">
             <Wallet className="h-4 w-4 text-purple-400" />
-            <p className="text-sm text-gray-400">Total Balance</p>
+            <p className="text-sm text-gray-300">Total Balance</p>
           </div>
           
           <h1 className="text-5xl font-black text-white tracking-tight">
             <AnimatedNumber value={wallet?.balance ?? 0} prefix="$" decimals={2} />
           </h1>
           
-          <p className="text-sm text-gray-500 mt-1">USDT</p>
+          <p className="text-sm text-gray-400 mt-1">USDT</p>
         </div>
       </div>
 
       {/* ═══════ MYSTERY BOX ═══════ */}
-      <Card className={`overflow-hidden border rounded-2xl transition-all duration-500 ${
-        mysteryReady 
-          ? "border-amber-500/30 shadow-lg shadow-amber-500/20" 
-          : "border-white/10"
+      <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ${
+        mysteryReady ? "border-amber-500/40 shadow-lg shadow-amber-500/20" : "border-white/10"
       }`}
         style={{
           background: mysteryReady 
-            ? "rgba(251, 191, 36, 0.05)" 
-            : "rgba(255, 255, 255, 0.02)",
+            ? "linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05))" 
+            : "linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01))",
           backdropFilter: "blur(10px)",
           WebkitBackdropFilter: "blur(10px)",
         }}
       >
-        <CardContent className="p-4">
+        <div className="p-4">
           <div className="flex items-center gap-4">
             <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 flex-shrink-0 ${
               mysteryReady 
-                ? "bg-gradient-to-br from-amber-400 to-yellow-600 shadow-lg shadow-amber-500/40" 
+                ? "bg-gradient-to-br from-amber-400 to-yellow-600 shadow-lg shadow-amber-500/40 scale-110" 
                 : "bg-white/5"
             }`}>
-              {mysteryReady ? (
-                <Package className="h-8 w-8 text-white animate-bounce" />
-              ) : (
-                <Clock className="h-8 w-8 text-gray-500" />
-              )}
+              {mysteryReady ? <Package className="h-8 w-8 text-white animate-bounce" /> : <Clock className="h-8 w-8 text-gray-500" />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-white">
-                {mysteryReady ? "🎁 Mystery Box Ready!" : "📦 Mystery Box"}
-              </p>
-              <p className="text-sm text-gray-400">
-                {mysteryReady
-                  ? "Open now for a random reward up to $5!"
-                  : `Available in ${mysteryTimeLeft}`}
-              </p>
-              <p className="text-xs text-amber-400 mt-1 font-medium">
-                🎲 $0.10 - $5.00 USDT
-              </p>
+              <p className="font-bold text-white">{mysteryReady ? "🎁 Mystery Box Ready!" : "📦 Mystery Box"}</p>
+              <p className="text-sm text-gray-400">{mysteryReady ? "Open now for a random reward up to $5!" : `Available in ${mysteryTimeLeft}`}</p>
+              <p className="text-xs text-amber-400 mt-1 font-medium">🎲 $0.10 - $5.00 USDT</p>
             </div>
-            <Button
-              onClick={handleOpenMystery}
-              disabled={!mysteryReady || mysteryOpening}
+            <Button onClick={handleOpenMystery} disabled={!mysteryReady || mysteryOpening}
               className={`flex-shrink-0 rounded-xl font-bold ${
-                mysteryReady
-                  ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-900 shadow-lg shadow-amber-500/30"
-                  : "bg-white/10 text-gray-400"
-              }`}
-            >
-              {mysteryOpening ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : mysteryReady ? (
-                "OPEN!"
-              ) : (
-                "Wait"
-              )}
+                mysteryReady ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-900 shadow-lg shadow-amber-500/30" : "bg-white/10 text-gray-400"
+              }`}>
+              {mysteryOpening ? <Loader2 className="h-4 w-4 animate-spin" /> : mysteryReady ? "OPEN!" : "Wait"}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* ═══════ SPIN BUTTON ═══════ */}
       <Button 
         className="h-16 text-lg rounded-2xl font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-600 text-amber-950 shadow-xl shadow-amber-500/30 border-0 transition-all active:scale-95"
         onClick={onNavigateToEarn}
       >
-        <Gift className="mr-2 h-6 w-6" />
-        Spin the Wheel
+        <Gift className="mr-2 h-6 w-6" />Spin the Wheel
         <span className="ml-2 text-sm opacity-75">({spinsRemaining}/{maxSpins})</span>
       </Button>
 
-      {/* ═══════ STATS ═══════ */}
+      {/* ═══════ STATS - ألوان مختلفة لكل كرت ═══════ */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { 
-            icon: Zap, 
-            label: "Spins Left", 
-            value: `${spinsRemaining}/${maxSpins}`,
-            gradient: "from-blue-500/20 to-cyan-500/10",
-            iconColor: "text-blue-400",
-            borderColor: "border-blue-500/30",
-          },
-          { 
-            icon: TrendingUp, 
-            label: "Total Earned", 
-            value: `$${(wallet?.total_earned ?? 0).toFixed(0)}`,
-            gradient: "from-green-500/20 to-emerald-500/10",
-            iconColor: "text-green-400",
-            borderColor: "border-green-500/30",
-          },
-          { 
-            icon: Users, 
-            label: "Referrals", 
-            value: String(totalReferrals),
-            gradient: "from-purple-500/20 to-pink-500/10",
-            iconColor: "text-purple-400",
-            borderColor: "border-purple-500/30",
-          },
-        ].map(({ icon: Icon, label, value, gradient, iconColor, borderColor }) => (
-          <Card key={label} className={`bg-gradient-to-br ${gradient} border ${borderColor} shadow-lg hover:scale-105 transition-transform`}>
-            <CardContent className="flex flex-col items-center p-4 gap-2">
-              <div className="p-2 rounded-xl bg-white/10">
-                <Icon className={`h-5 w-5 ${iconColor}`} />
-              </div>
-              <p className="text-xl font-black text-white">{value}</p>
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{label}</p>
-            </CardContent>
-          </Card>
+          { icon: Zap, label: "Spins Left", value: `${spinsRemaining}/${maxSpins}`, gradient: "from-blue-500/20 to-cyan-500/10", iconColor: "text-blue-400", border: "border-blue-500/30", shadow: "shadow-blue-500/10" },
+          { icon: TrendingUp, label: "Total Earned", value: `$${(wallet?.total_earned ?? 0).toFixed(0)}`, gradient: "from-green-500/20 to-emerald-500/10", iconColor: "text-green-400", border: "border-green-500/30", shadow: "shadow-green-500/10" },
+          { icon: Users, label: "Referrals", value: String(totalReferrals), gradient: "from-purple-500/20 to-pink-500/10", iconColor: "text-purple-400", border: "border-purple-500/30", shadow: "shadow-purple-500/10" },
+        ].map(({ icon: Icon, label, value, gradient, iconColor, border, shadow }) => (
+          <div key={label} className={`bg-gradient-to-br ${gradient} border ${border} rounded-2xl p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform ${shadow}`}
+            style={{ backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+            <div className="p-2 rounded-xl bg-white/10"><Icon className={`h-5 w-5 ${iconColor}`} /></div>
+            <p className="text-lg font-black text-white">{value}</p>
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{label}</p>
+          </div>
         ))}
       </div>
 
       {/* ═══════ DAILY BONUS ═══════ */}
-      <Card className="border border-white/10 rounded-2xl overflow-hidden"
-        style={{
-          background: "rgba(255, 255, 255, 0.02)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-        }}
-      >
-        <CardContent className="p-5">
+      <div className="rounded-2xl border border-white/10 overflow-hidden"
+        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+        <div className="p-5">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <p className="font-bold text-white flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-400" />
-                Daily Bonus
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Day {currentDay}/7 — Come back tomorrow for more!
-              </p>
+              <p className="font-bold text-white flex items-center gap-2"><Star className="h-5 w-5 text-yellow-400" />Daily Bonus</p>
+              <p className="text-xs text-gray-400 mt-1">Day {currentDay}/7 — Come back tomorrow for more!</p>
             </div>
-            <Button
-              size="sm"
-              onClick={handleClaimBonus}
-              disabled={!canClaim || bonusClaiming || claimedToday}
-              className={`rounded-xl font-bold ${
-                claimedToday 
-                  ? "bg-green-500/20 text-green-400" 
-                  : canClaim 
-                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30"
-                    : "bg-white/10 text-gray-500"
-              }`}
-            >
-              {bonusClaiming ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : claimedToday ? (
-                "✓ Claimed"
-              ) : (
-                "Claim"
-              )}
+            <Button size="sm" onClick={handleClaimBonus} disabled={!canClaim || bonusClaiming || claimedToday}
+              className={`rounded-xl font-bold ${claimedToday ? "bg-green-500/20 text-green-400" : canClaim ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30" : "bg-white/10 text-gray-500"}`}>
+              {bonusClaiming ? <Loader2 className="h-4 w-4 animate-spin" /> : claimedToday ? "✓ Claimed" : "Claim"}
             </Button>
           </div>
           <Progress value={(currentDay / 7) * 100} className="h-2 bg-white/10" />
           <div className="mt-3 flex justify-between">
             {DAILY_REWARDS.map((r, i) => (
-              <div
-                key={i}
-                className={`flex flex-col items-center text-[10px] gap-1 transition-all ${
-                  i + 1 < currentDay
-                    ? "text-green-400"
-                    : i + 1 === currentDay
-                    ? "text-yellow-400 font-bold scale-110"
-                    : "text-gray-600"
-                }`}
-              >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                  i + 1 < currentDay 
-                    ? "bg-green-500/20" 
-                    : i + 1 === currentDay 
-                      ? "bg-yellow-500/20 ring-2 ring-yellow-400/50"
-                      : "bg-white/5"
-                }`}>
+              <div key={i} className={`flex flex-col items-center text-[10px] gap-1 transition-all ${i + 1 < currentDay ? "text-green-400" : i + 1 === currentDay ? "text-yellow-400 font-bold scale-110" : "text-gray-600"}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${i + 1 < currentDay ? "bg-green-500/20" : i + 1 === currentDay ? "bg-yellow-500/20 ring-2 ring-yellow-400/50" : "bg-white/5"}`}>
                   {i + 1 < currentDay ? "✓" : `D${i + 1}`}
                 </span>
                 <span>${r.toFixed(2)}</span>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* ═══════ REFERRALS ═══════ */}
       {activeReferrals > 0 && (
-        <Card className="border border-green-500/30 rounded-2xl overflow-hidden shadow-lg"
-          style={{
-            background: "rgba(34, 197, 94, 0.05)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-          }}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-bold text-white flex items-center gap-2">
-                  <Users className="h-4 w-4 text-green-400" />
-                  Referral Earnings
-                </p>
-                <p className="text-xs text-gray-400 mt-1">{activeReferrals} active referrals</p>
-              </div>
-              <p className="text-2xl font-black text-green-400">
-                +${referralEarnings.toFixed(2)}
-              </p>
+        <div className="rounded-2xl border border-green-500/30 overflow-hidden shadow-lg"
+          style={{ background: "rgba(34,197,94,0.05)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+          <div className="p-4 flex items-center justify-between">
+            <div>
+              <p className="font-bold text-white flex items-center gap-2"><Users className="h-4 w-4 text-green-400" />Referral Earnings</p>
+              <p className="text-xs text-gray-400 mt-1">{activeReferrals} active referrals</p>
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-2xl font-black text-green-400">+${referralEarnings.toFixed(2)}</p>
+          </div>
+        </div>
       )}
 
       {/* ═══════ DIALOGS ═══════ */}
       <Dialog open={mysteryOpen} onOpenChange={setMysteryOpen}>
-        <DialogContent className="text-center border-0 bg-gradient-to-b from-amber-900/50 to-yellow-900/50 rounded-3xl">
+        <DialogContent className="text-center border-0 rounded-3xl" style={{ background: "linear-gradient(180deg, rgba(251,191,36,0.2), rgba(245,158,11,0.1))", backdropFilter: "blur(20px)" }}>
           <Package className="h-16 w-16 text-amber-400 mx-auto mb-3 animate-bounce" />
           <h2 className="text-2xl font-black text-white">Mystery Box Opened!</h2>
-          <p className="text-amber-400 text-4xl mt-2 font-black">
-            +${(mysteryReward ?? 0).toFixed(2)} USDT
-          </p>
+          <p className="text-amber-400 text-4xl mt-2 font-black">+${(mysteryReward ?? 0).toFixed(2)} USDT</p>
           <p className="text-sm text-gray-400 mt-1">Come back later for another box!</p>
         </DialogContent>
       </Dialog>
 
       <Dialog open={bonusClaimOpen} onOpenChange={setBonusClaimOpen}>
-        <DialogContent className="text-center border-0 bg-gradient-to-b from-green-900/50 to-emerald-900/50 rounded-3xl">
+        <DialogContent className="text-center border-0 rounded-3xl" style={{ background: "linear-gradient(180deg, rgba(34,197,94,0.2), rgba(16,185,129,0.1))", backdropFilter: "blur(20px)" }}>
           <CheckCircle2 className="h-16 w-16 text-green-400 mx-auto mb-3" />
           <h2 className="text-2xl font-black text-white">Bonus Claimed!</h2>
-          <p className="text-green-400 text-4xl mt-2 font-black">
-            +${(bonusResult ?? 0).toFixed(2)} USDT
-          </p>
+          <p className="text-green-400 text-4xl mt-2 font-black">+${(bonusResult ?? 0).toFixed(2)} USDT</p>
           <p className="text-sm text-gray-400 mt-1">Day {currentDay} streak! 🔥</p>
         </DialogContent>
       </Dialog>
 
       <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-        <DialogContent className="border-0 rounded-3xl"
-          style={{
-            background: "rgba(20, 20, 40, 0.95)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-          }}
-        >
+        <DialogContent className="border-0 rounded-3xl" style={{ background: "rgba(20,20,40,0.95)", backdropFilter: "blur(20px)" }}>
           <DialogHeader>
             <DialogTitle className="text-white">🔔 Notifications</DialogTitle>
             <DialogDescription className="text-gray-400">You're all caught up!</DialogDescription>
