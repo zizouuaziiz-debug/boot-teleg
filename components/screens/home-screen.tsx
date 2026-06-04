@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, Crown, Gift, Users, TrendingUp, Zap, CheckCircle2, Loader2,
-  Package, Clock, Wallet, Sparkles, ChevronRight, Star, Diamond, Gem,
+  Package, Clock, Sparkles, Diamond, Star, Wallet,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -212,17 +212,17 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-24 safe-area-top animate-in fade-in duration-500">
+    <div className="flex flex-col gap-5 p-4 pb-24 safe-area-top animate-in fade-in duration-500">
       
       {/* ═══════ HEADER ═══════ */}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Avatar className="h-12 w-12 ring-2 ring-primary/50 shadow-lg shadow-primary/20">
+            <Avatar className="h-11 w-11 ring-2 ring-purple-500/50 shadow-lg shadow-purple-500/20">
               {user?.photo_url && (
                 <AvatarImage src={user.photo_url} alt={displayName} />
               )}
-              <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-600 text-white">
+              <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-600 text-white text-sm">
                 {avatarInitials}
               </AvatarFallback>
             </Avatar>
@@ -233,71 +233,72 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
             )}
           </div>
           <div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-primary" />
+            <p className="text-xs text-gray-400 flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-purple-400" />
               Welcome back
             </p>
-            <h2 className="font-bold text-lg">{displayName}</h2>
+            <h2 className="font-bold text-white">{displayName}</h2>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className={`bg-gradient-to-r ${vipColors[vipLevel] || vipColors[0]} border-0 shadow-lg`}>
+          <Badge className={`bg-gradient-to-r ${vipColors[vipLevel] || vipColors[0]} border-0 shadow-lg text-white text-xs`}>
             <Crown className="h-3 w-3 mr-1" />
             {vipNames[vipLevel] || "Free"}
           </Badge>
           <Button variant="ghost" size="icon" onClick={() => setNotificationsOpen(true)} className="relative">
-            <Bell className="h-5 w-5" />
+            <Bell className="h-5 w-5 text-gray-400" />
             <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
           </Button>
         </div>
       </header>
 
-      {/* ═══════ BALANCE CARD ═══════ */}
-      <Card className="overflow-hidden border-0 bg-gradient-to-br from-[#1a1040] via-[#120b2e] to-[#0f0825] shadow-2xl shadow-purple-900/30">
-        <CardContent className="p-6 relative">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-purple-600/20 rounded-full blur-3xl -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-600/20 rounded-full blur-3xl -ml-16 -mb-16" />
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-1">
-              <Wallet className="h-4 w-4 text-purple-400" />
-              <p className="text-sm text-purple-300">Total Balance</p>
-            </div>
-            <h1 className="text-5xl font-black text-white tracking-tight">
-              <AnimatedNumber value={wallet?.balance ?? 0} prefix="$" decimals={2} />
-            </h1>
-            <p className="text-xs text-purple-400 mt-1">USDT</p>
-
-            <div className="flex gap-2 mt-6">
-              <Button 
-                onClick={() => {}} 
-                className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 shadow-lg shadow-purple-900/40 border-0 h-12 rounded-xl font-semibold"
-              >
-                💰 Deposit
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1 border-purple-500/50 text-purple-300 hover:bg-purple-500/10 h-12 rounded-xl font-semibold"
-              >
-                💸 Withdraw
-              </Button>
-            </div>
+      {/* ═══════ BALANCE - GLASS MORPHISM | CENTERED ═══════ */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/10"
+        style={{
+          background: "rgba(255, 255, 255, 0.03)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+        }}
+      >
+        <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -ml-16 -mb-16" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 flex flex-col items-center justify-center py-10 px-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-4">
+            <Wallet className="h-4 w-4 text-purple-400" />
+            <p className="text-sm text-gray-400">Total Balance</p>
           </div>
-        </CardContent>
-      </Card>
+          
+          <h1 className="text-5xl font-black text-white tracking-tight">
+            <AnimatedNumber value={wallet?.balance ?? 0} prefix="$" decimals={2} />
+          </h1>
+          
+          <p className="text-sm text-gray-500 mt-1">USDT</p>
+        </div>
+      </div>
 
       {/* ═══════ MYSTERY BOX ═══════ */}
-      <Card className={`overflow-hidden border-0 shadow-xl transition-all duration-500 ${
+      <Card className={`overflow-hidden border rounded-2xl transition-all duration-500 ${
         mysteryReady 
-          ? "bg-gradient-to-r from-amber-900/40 to-yellow-900/40 shadow-amber-500/20 animate-pulse" 
-          : "bg-gradient-to-r from-[#1a1a2e] to-[#16213e]"
-      }`}>
+          ? "border-amber-500/30 shadow-lg shadow-amber-500/20" 
+          : "border-white/10"
+      }`}
+        style={{
+          background: mysteryReady 
+            ? "rgba(251, 191, 36, 0.05)" 
+            : "rgba(255, 255, 255, 0.02)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
+      >
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
-            <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 ${
+            <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 flex-shrink-0 ${
               mysteryReady 
-                ? "bg-gradient-to-br from-amber-400 to-yellow-600 shadow-lg shadow-amber-500/40 scale-110" 
+                ? "bg-gradient-to-br from-amber-400 to-yellow-600 shadow-lg shadow-amber-500/40" 
                 : "bg-white/5"
             }`}>
               {mysteryReady ? (
@@ -306,8 +307,8 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
                 <Clock className="h-8 w-8 text-gray-500" />
               )}
             </div>
-            <div className="flex-1">
-              <p className="font-bold text-lg">
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-white">
                 {mysteryReady ? "🎁 Mystery Box Ready!" : "📦 Mystery Box"}
               </p>
               <p className="text-sm text-gray-400">
@@ -347,7 +348,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       >
         <Gift className="mr-2 h-6 w-6" />
         Spin the Wheel
-        <ChevronRight className="ml-2 h-5 w-5" />
+        <span className="ml-2 text-sm opacity-75">({spinsRemaining}/{maxSpins})</span>
       </Button>
 
       {/* ═══════ STATS ═══════ */}
@@ -380,10 +381,10 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         ].map(({ icon: Icon, label, value, gradient, iconColor, borderColor }) => (
           <Card key={label} className={`bg-gradient-to-br ${gradient} border ${borderColor} shadow-lg hover:scale-105 transition-transform`}>
             <CardContent className="flex flex-col items-center p-4 gap-2">
-              <div className={`p-2 rounded-xl bg-white/10`}>
+              <div className="p-2 rounded-xl bg-white/10">
                 <Icon className={`h-5 w-5 ${iconColor}`} />
               </div>
-              <p className="text-xl font-black">{value}</p>
+              <p className="text-xl font-black text-white">{value}</p>
               <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{label}</p>
             </CardContent>
           </Card>
@@ -391,11 +392,17 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       </div>
 
       {/* ═══════ DAILY BONUS ═══════ */}
-      <Card className="border-0 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] shadow-xl">
+      <Card className="border border-white/10 rounded-2xl overflow-hidden"
+        style={{
+          background: "rgba(255, 255, 255, 0.02)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
+      >
         <CardContent className="p-5">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <p className="font-bold text-lg flex items-center gap-2">
+              <p className="font-bold text-white flex items-center gap-2">
                 <Star className="h-5 w-5 text-yellow-400" />
                 Daily Bonus
               </p>
@@ -455,11 +462,17 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
       {/* ═══════ REFERRALS ═══════ */}
       {activeReferrals > 0 && (
-        <Card className="border-0 bg-gradient-to-r from-green-900/30 to-emerald-900/20 border border-green-500/30 shadow-lg">
+        <Card className="border border-green-500/30 rounded-2xl overflow-hidden shadow-lg"
+          style={{
+            background: "rgba(34, 197, 94, 0.05)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-bold flex items-center gap-2">
+                <p className="font-bold text-white flex items-center gap-2">
                   <Users className="h-4 w-4 text-green-400" />
                   Referral Earnings
                 </p>
@@ -475,9 +488,9 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
       {/* ═══════ DIALOGS ═══════ */}
       <Dialog open={mysteryOpen} onOpenChange={setMysteryOpen}>
-        <DialogContent className="text-center border-0 bg-gradient-to-b from-amber-900/50 to-yellow-900/50">
+        <DialogContent className="text-center border-0 bg-gradient-to-b from-amber-900/50 to-yellow-900/50 rounded-3xl">
           <Package className="h-16 w-16 text-amber-400 mx-auto mb-3 animate-bounce" />
-          <h2 className="text-2xl font-black">Mystery Box Opened!</h2>
+          <h2 className="text-2xl font-black text-white">Mystery Box Opened!</h2>
           <p className="text-amber-400 text-4xl mt-2 font-black">
             +${(mysteryReward ?? 0).toFixed(2)} USDT
           </p>
@@ -486,9 +499,9 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       </Dialog>
 
       <Dialog open={bonusClaimOpen} onOpenChange={setBonusClaimOpen}>
-        <DialogContent className="text-center border-0 bg-gradient-to-b from-green-900/50 to-emerald-900/50">
+        <DialogContent className="text-center border-0 bg-gradient-to-b from-green-900/50 to-emerald-900/50 rounded-3xl">
           <CheckCircle2 className="h-16 w-16 text-green-400 mx-auto mb-3" />
-          <h2 className="text-2xl font-black">Bonus Claimed!</h2>
+          <h2 className="text-2xl font-black text-white">Bonus Claimed!</h2>
           <p className="text-green-400 text-4xl mt-2 font-black">
             +${(bonusResult ?? 0).toFixed(2)} USDT
           </p>
@@ -497,10 +510,16 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       </Dialog>
 
       <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-        <DialogContent className="border-0 bg-gradient-to-b from-[#1a1a2e] to-[#16213e]">
+        <DialogContent className="border-0 rounded-3xl"
+          style={{
+            background: "rgba(20, 20, 40, 0.95)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+          }}
+        >
           <DialogHeader>
-            <DialogTitle>🔔 Notifications</DialogTitle>
-            <DialogDescription>You're all caught up!</DialogDescription>
+            <DialogTitle className="text-white">🔔 Notifications</DialogTitle>
+            <DialogDescription className="text-gray-400">You're all caught up!</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
