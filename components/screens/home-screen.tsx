@@ -48,6 +48,10 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   const [referralEarnings, setReferralEarnings] = useState(0);
   const [activeReferrals, setActiveReferrals]   = useState(0);
 
+  // ⭐️ Spin state
+  const [spinsRemaining, setSpinsRemaining] = useState(0);
+  const [maxSpins, setMaxSpins] = useState(3);
+
   const displayName =
     user
       ? [user.first_name, user.last_name].filter(Boolean).join(" ") ||
@@ -62,9 +66,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  // =========================
-  // DAILY BONUS — fetch state
-  // =========================
   const fetchBonusState = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -75,18 +76,30 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         setCurrentDay(data.currentDay ?? 1);
         setClaimedToday(data.claimed ?? false);
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [telegramId, authHeaders]);
 
   useEffect(() => {
     fetchBonusState();
   }, [fetchBonusState]);
 
-  // =========================
-  // DAILY BONUS — claim
-  // =========================
+  // ⭐️ Fetch spin state
+  const fetchSpinState = useCallback(async () => {
+    if (!telegramId) return;
+    try {
+      const res = await fetch("/api/spin", { headers: authHeaders });
+      const data = await res.json();
+      if (!data.error) {
+        setSpinsRemaining(data.spinsRemaining ?? 0);
+        setMaxSpins(data.maxSpins ?? 3);
+      }
+    } catch {}
+  }, [telegramId, authHeaders]);
+
+  useEffect(() => {
+    fetchSpinState();
+  }, [fetchSpinState]);
+
   const handleClaimBonus = async () => {
     if (!canClaim || bonusClaiming) return;
     setBonusClaiming(true);
@@ -105,16 +118,11 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         await refreshWallet();
         setTimeout(() => setBonusClaimOpen(false), 3000);
       }
-    } catch {
-      // ignore
-    } finally {
+    } catch {} finally {
       setBonusClaiming(false);
     }
   };
 
-  // =========================
-  // REFERRALS
-  // =========================
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -128,9 +136,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         setReferralEarnings(data.totalEarnings  ?? 0);
         setActiveReferrals(data.activeReferrals ?? 0);
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [telegramId, authHeaders]);
 
   useEffect(() => {
@@ -201,8 +207,8 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icon: Zap,         label: "Videos",   value: "0" },
-          { icon: TrendingUp,  label: "Earned",   value: `$${(wallet?.total_earned ?? 0).toFixed(0)}` },
+          { icon: Zap,         label: "Spins",     value: `${spinsRemaining}/${maxSpins}` },
+          { icon: TrendingUp,  label: "Earned",    value: `$${(wallet?.total_earned ?? 0).toFixed(0)}` },
           { icon: Users,       label: "Referrals", value: String(totalReferrals) },
         ].map(({ icon: Icon, label, value }) => (
           <Card key={label}>
