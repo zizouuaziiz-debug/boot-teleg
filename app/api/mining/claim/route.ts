@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { broadcastWalletUpdate } from "@/lib/realtime-broadcast";
 import { DEFAULT_MINING_RATES } from "@/lib/mining-config";
+import { creditReferralReward } from "@/lib/creditReferralReward";
 
 export async function POST(req: NextRequest) {
   const supabase   = getSupabaseAdmin();
@@ -36,8 +37,6 @@ export async function POST(req: NextRequest) {
   const durationMs   = (session.duration_hours ?? config.duration_hours) * 3_600_000;
   const elapsedMs    = Date.now() - new Date(session.started_at).getTime();
 
-  // BUG FIX: allow claim when 90% elapsed OR fully elapsed (100%)
-  // Previously: elapsedMs < durationMs * 0.9 blocked expired sessions
   const minElapsedMs = durationMs * 0.9;
   if (elapsedMs < minElapsedMs) {
     const remainingMin = Math.ceil((minElapsedMs - elapsedMs) / 60000);
@@ -46,7 +45,6 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  // Cap elapsed at exactly duration_hours to avoid over-rewarding
   const elapsedH       = Math.min(elapsedMs / 3_600_000, session.duration_hours ?? config.duration_hours);
   const dailyRate      = Number(session.rate ?? config.daily_rate);
   const balanceAtStart = Number(session.balance_at_start ?? 0);
@@ -57,24 +55,21 @@ export async function POST(req: NextRequest) {
     ) * 1e8
   ) / 1e8;
 
-  // ── Atomic claim via optimistic lock ─────────────────────────────────────
   const { data: claimedSession } = await supabase
     .from("mining_sessions")
     .update({ status: "completed", completed_at: new Date().toISOString(), earned })
     .eq("id", session.id)
-    .eq("status", "active")   // prevents double-claim
+    .eq("status", "active")
     .select()
     .maybeSingle();
 
   if (!claimedSession) {
-    // Idempotency: already claimed (e.g. auto-complete in status route raced us)
     const { data: done } = await supabase
       .from("mining_sessions")
       .select("earned").eq("id", session.id).maybeSingle();
     return NextResponse.json({ success: true, earned: Number(done?.earned ?? earned), idempotent: true });
   }
 
-  // ── Credit wallet ─────────────────────────────────────────────────────────
   const { data: wallet } = await supabase
     .from("wallets").select("balance, total_earned, total_withdrawn, coins")
     .eq("user_id", user.id).maybeSingle();
@@ -95,6 +90,9 @@ export async function POST(req: NextRequest) {
     user_id: user.id, type: "mining", amount: earned,
     status: "completed", source: `mining:${planId}`,
   });
+
+  // ⭐️ عمولة الإحالة
+  await creditReferralReward(user.id, earned);
 
   return NextResponse.json({ success: true, earned });
 }
