@@ -301,10 +301,9 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         onClick={onNavigateToEarn}
       >
         <Gift className="mr-2 h-6 w-6" />Spin the Wheel
-        <span className="ml-2 text-sm opacity-75">({spinsRemaining}/{maxSpins})</span>
       </Button>
 
-      {/* ═══════ STATS - ألوان مختلفة لكل كرت ═══════ */}
+      {/* ═══════ STATS ═══════ */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { icon: Zap, label: "Spins Left", value: `${spinsRemaining}/${maxSpins}`, gradient: "from-blue-500/20 to-cyan-500/10", iconColor: "text-blue-400", border: "border-blue-500/30", shadow: "shadow-blue-500/10" },
