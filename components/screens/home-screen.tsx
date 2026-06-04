@@ -82,10 +82,10 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   const fetchSpinState = useCallback(async () => {
     if (!telegramId) return;
     try {
-      const res = await fetch("/api/spin", { headers: authHeaders });
+      const res = await fetch("/api/rewards/spin/status", { headers: authHeaders });
       const data = await res.json();
-      if (data && !data.error) {
-        setSpinsRemaining(data.spinsRemaining ?? 3);
+      if (data && typeof data.spinsRemaining === "number") {
+        setSpinsRemaining(data.spinsRemaining);
         setMaxSpins(data.maxSpins ?? 3);
       }
     } catch (error) {
