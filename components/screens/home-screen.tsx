@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, Crown, Gift, Users, TrendingUp, Zap, CheckCircle2, Loader2,
-  Package, Trophy, Clock,
+  Package, Clock,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,7 +42,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   const [referralEarnings, setReferralEarnings] = useState(0);
   const [activeReferrals, setActiveReferrals] = useState(0);
 
-  const [spinsRemaining, setSpinsRemaining] = useState(0);
+  const [spinsRemaining, setSpinsRemaining] = useState(3);
   const [maxSpins, setMaxSpins] = useState(3);
 
   const [mysteryReady, setMysteryReady] = useState(false);
@@ -50,10 +50,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   const [mysteryOpening, setMysteryOpening] = useState(false);
   const [mysteryReward, setMysteryReward] = useState<number | null>(null);
   const [mysteryOpen, setMysteryOpen] = useState(false);
-
-  const [leaders, setLeaders] = useState<any[]>([]);
-  const [userRank, setUserRank] = useState<any>(null);
-  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
   const displayName = user
     ? [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || "User"
@@ -88,14 +84,11 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     try {
       const res = await fetch("/api/spin", { headers: authHeaders });
       const data = await res.json();
-      console.log("Spin API response:", data);
       if (!data.error) {
-        setSpinsRemaining(data.spinsRemaining ?? 0);
+        setSpinsRemaining(data.spinsRemaining ?? 3);
         setMaxSpins(data.maxSpins ?? 3);
       }
-    } catch (e) {
-      console.error("Spin fetch error:", e);
-    }
+    } catch {}
   }, [telegramId, authHeaders]);
 
   useEffect(() => {
@@ -141,22 +134,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       setMysteryOpening(false);
     }
   };
-
-  const fetchLeaderboard = useCallback(async () => {
-    if (!telegramId) return;
-    try {
-      const res = await fetch("/api/leaderboard", { headers: authHeaders });
-      const data = await res.json();
-      if (!data.error) {
-        setLeaders(data.leaders ?? []);
-        setUserRank(data.userRank ?? null);
-      }
-    } catch {}
-  }, [telegramId, authHeaders]);
-
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [fetchLeaderboard]);
 
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
@@ -315,40 +292,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         ))}
       </div>
 
-      {/* LEADERBOARD PREVIEW */}
-      <Card className="cursor-pointer" onClick={() => setLeaderboardOpen(true)}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="font-semibold flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-400" />
-              Top Earners
-            </p>
-            <span className="text-xs text-primary">View All →</span>
-          </div>
-          {leaders.slice(0, 3).map((leader, i) => (
-            <div key={i} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
-              <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                i === 0 ? "bg-yellow-400 text-yellow-900" :
-                i === 1 ? "bg-slate-300 text-slate-700" :
-                "bg-orange-700 text-orange-200"
-              }`}>
-                {leader.rank}
-              </span>
-              <div className="flex-1">
-                <p className="text-sm font-medium">{leader.name}</p>
-              </div>
-              <p className="text-sm font-bold text-green-400">${leader.earned.toFixed(2)}</p>
-            </div>
-          ))}
-          {userRank && (
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Your Rank</p>
-              <p className="font-bold text-primary">#{userRank.rank} · ${userRank.earned.toFixed(2)}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* DAILY BONUS */}
       <Card>
         <CardContent className="p-4">
@@ -427,33 +370,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
             +${(bonusResult ?? 0).toFixed(2)} USDT
           </p>
           <p className="text-sm text-muted-foreground mt-1">Day {currentDay} streak</p>
-        </DialogContent>
-      </Dialog>
-
-      {/* LEADERBOARD DIALOG */}
-      <Dialog open={leaderboardOpen} onOpenChange={setLeaderboardOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-400" />
-              Leaderboard
-            </DialogTitle>
-            <DialogDescription>Top earners all time</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            {leaders.map((leader, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-3 p-3 rounded-lg ${
-                  leader.isCurrentUser ? "bg-primary/20 border border-primary/50" : "bg-secondary/30"
-                }`}
-              >
-                <span className="font-bold text-sm w-6">#{leader.rank}</span>
-                <span className="flex-1 text-sm">{leader.name}</span>
-                <span className="font-bold text-green-400">${leader.earned.toFixed(2)}</span>
-              </div>
-            ))}
-          </div>
         </DialogContent>
       </Dialog>
 
