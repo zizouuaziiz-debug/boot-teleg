@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { broadcastWalletUpdate } from "@/lib/realtime-broadcast";
 import { creditReferralReward } from "@/lib/creditReferralReward";
 
-const MYSTERY_REWARDS = [0.10, 0.25, 0.50, 1.00, 2.00, 5.00];
+const MYSTERY_REWARDS = [0.10, 0.25, 0.50, 1.00, 2.00];
 const COOLDOWN_HOURS = 4;
 
 export async function GET(req: NextRequest) {
