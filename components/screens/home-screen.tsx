@@ -84,11 +84,13 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     try {
       const res = await fetch("/api/spin", { headers: authHeaders });
       const data = await res.json();
-      if (!data.error) {
+      if (data && !data.error) {
         setSpinsRemaining(data.spinsRemaining ?? 3);
         setMaxSpins(data.maxSpins ?? 3);
       }
-    } catch {}
+    } catch (error) {
+      // silent fail
+    }
   }, [telegramId, authHeaders]);
 
   useEffect(() => {
