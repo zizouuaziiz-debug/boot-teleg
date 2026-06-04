@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { broadcastWalletUpdate } from "@/lib/realtime-broadcast";
-
+import { creditReferralReward } from "@/lib/creditReferralReward";
 const PRIZES  = [0.10, 0.50, 1.00, 0.25, 5.00, 0.05, 10.00, 0.15];
 const WEIGHTS = [25,   20,   10,   20,   3,    30,   1,     15];
 const DEFAULT_MAX_DAILY_SPINS = 3;
@@ -107,6 +107,8 @@ export async function POST(req: NextRequest) {
     };
     await supabase.from("wallets").update(newWallet).eq("user_id", user.id);
     await broadcastWalletUpdate(user.id, newWallet);
+    // ⭐️ عمولة الإحالة
+await creditReferralReward(user.id, prize);
   }
 
   /* ── Log ──────────────────────────────────────────────────────────────── */
