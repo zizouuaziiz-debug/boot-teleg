@@ -282,8 +282,8 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-white">{mysteryReady ? "🎁 Mystery Box Ready!" : "📦 Mystery Box"}</p>
-              <p className="text-sm text-gray-400">{mysteryReady ? "Open now for a random reward up to $5!" : `Available in ${mysteryTimeLeft}`}</p>
-              <p className="text-xs text-amber-400 mt-1 font-medium">🎲 $0.10 - $5.00 USDT</p>
+              <p className="text-sm text-gray-400">{mysteryReady ? "Open now for a random reward up to $2!" : `Available in ${mysteryTimeLeft}`}</p>
+              <p className="text-xs text-amber-400 mt-1 font-medium">🎲 $0.10 - $2.00 USDT</p>
             </div>
             <Button onClick={handleOpenMystery} disabled={!mysteryReady || mysteryOpening}
               className={`flex-shrink-0 rounded-xl font-bold ${
