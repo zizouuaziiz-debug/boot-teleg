@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { broadcastWalletUpdate } from "@/lib/realtime-broadcast";
 import { creditReferralReward } from "@/lib/creditReferralReward";
+
 const PRIZES  = [0.10, 0.50, 1.00, 0.25, 5.00, 0.05, 10.00, 0.15];
 const WEIGHTS = [25,   20,   10,   20,   3,    30,   1,     15];
 const DEFAULT_MAX_DAILY_SPINS = 3;
 
-/* ─── UTC day key ───────────────────────────────────────────────────────── */
 function getTodayKey() {
-  return new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  return new Date().toISOString().split("T")[0];
 }
 
-/* ─── Weighted random ───────────────────────────────────────────────────── */
 function weightedRandom(prizes: number[], weights: number[]) {
   const total = weights.reduce((a, b) => a + b, 0);
   let rand = Math.random() * total;
@@ -27,18 +26,15 @@ export async function POST(req: NextRequest) {
   const telegramId = req.headers.get("x-telegram-id");
   if (!telegramId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  /* ── User ─────────────────────────────────────────────────────────────── */
   const { data: user } = await supabase
     .from("users").select("id").eq("telegram_id", telegramId).maybeSingle();
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  /* ── Config ───────────────────────────────────────────────────────────── */
   const { data: adminCfg } = await supabase
     .from("admin_config").select("spin_daily_limit").eq("id", 1).maybeSingle();
   const maxDailySpins = Number(adminCfg?.spin_daily_limit ?? DEFAULT_MAX_DAILY_SPINS);
   const todayKey      = getTodayKey();
 
-  /* ── State ────────────────────────────────────────────────────────────── */
   let { data: state } = await supabase
     .from("user_spin_state").select("*").eq("user_id", user.id).maybeSingle();
 
@@ -50,12 +46,6 @@ export async function POST(req: NextRequest) {
     state = inserted;
   }
 
-  /* ── BUG FIX: compare only the date portion ───────────────────────────
-     last_reset is stored as TIMESTAMPTZ in some deployments, meaning the
-     raw value is "2025-05-23T00:00:00+00:00". We extract "YYYY-MM-DD"
-     before comparing so the daily reset works correctly regardless of the
-     column type.
-  ──────────────────────────────────────────────────────────────────────── */
   const storedDate = state.last_reset
     ? String(state.last_reset).split("T")[0]
     : null;
@@ -69,7 +59,6 @@ export async function POST(req: NextRequest) {
     state.last_reset = todayKey;
   }
 
-  /* ── Daily limit ──────────────────────────────────────────────────────── */
   if (state.spins_used >= maxDailySpins) {
     return NextResponse.json(
       { error: "No spins left today", spinsRemaining: 0, maxSpins: maxDailySpins },
@@ -77,23 +66,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  /* ── Atomic increment (anti-spam) ─────────────────────────────────────── */
   const newSpins = state.spins_used + 1;
   const { error: updateErr } = await supabase
     .from("user_spin_state")
     .update({ spins_used: newSpins })
     .eq("user_id", user.id)
-    .eq("spins_used", state.spins_used); // optimistic lock: only update if unchanged
+    .eq("spins_used", state.spins_used);
 
   if (updateErr) {
     return NextResponse.json({ error: "Spin conflict, try again" }, { status: 409 });
   }
 
-  /* ── Prize ────────────────────────────────────────────────────────────── */
   const { prize, index } = weightedRandom(PRIZES, WEIGHTS);
   const now = new Date().toISOString();
 
-  /* ── Wallet ───────────────────────────────────────────────────────────── */
   const { data: wallet } = await supabase
     .from("wallets").select("*").eq("user_id", user.id).maybeSingle();
 
@@ -107,15 +93,15 @@ export async function POST(req: NextRequest) {
     };
     await supabase.from("wallets").update(newWallet).eq("user_id", user.id);
     await broadcastWalletUpdate(user.id, newWallet);
-    // ⭐️ عمولة الإحالة
-await creditReferralReward(user.id, prize);
   }
 
-  /* ── Log ──────────────────────────────────────────────────────────────── */
   await supabase.from("transactions").insert({
     user_id: user.id, type: "spin", amount: prize,
     status: "completed", source: "Lucky Wheel", created_at: now,
   });
+
+  // ⭐️ عمولة الإحالة
+  await creditReferralReward(user.id, prize);
 
   return NextResponse.json({
     success:        true,
