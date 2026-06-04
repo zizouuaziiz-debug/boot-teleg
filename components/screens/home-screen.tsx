@@ -45,14 +45,12 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   const [spinsRemaining, setSpinsRemaining] = useState(0);
   const [maxSpins, setMaxSpins] = useState(3);
 
-  // ⭐️ Mystery Box
   const [mysteryReady, setMysteryReady] = useState(false);
   const [mysteryTimeLeft, setMysteryTimeLeft] = useState("");
   const [mysteryOpening, setMysteryOpening] = useState(false);
   const [mysteryReward, setMysteryReward] = useState<number | null>(null);
   const [mysteryOpen, setMysteryOpen] = useState(false);
 
-  // ⭐️ Leaderboard
   const [leaders, setLeaders] = useState<any[]>([]);
   const [userRank, setUserRank] = useState<any>(null);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -68,9 +66,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  // =========================
-  // DAILY BONUS
-  // =========================
   const fetchBonusState = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -84,11 +79,10 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     } catch {}
   }, [telegramId, authHeaders]);
 
-  useEffect(() => { fetchBonusState(); }, [fetchBonusState]);
+  useEffect(() => {
+    fetchBonusState();
+  }, [fetchBonusState]);
 
-  // =========================
-  // SPIN STATE
-  // =========================
   const fetchSpinState = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -101,15 +95,14 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     } catch {}
   }, [telegramId, authHeaders]);
 
-  useEffect(() => { fetchSpinState(); }, [fetchSpinState]);
+  useEffect(() => {
+    fetchSpinState();
+  }, [fetchSpinState]);
 
-  // =========================
-  // MYSTERY BOX
-  // =========================
   const fetchMysteryBox = useCallback(async () => {
     if (!telegramId) return;
     try {
-      const res = await fetch("/api/mystery-box", { headers: authHeaders });
+      const res = await fetch("/api/mysterybox", { headers: authHeaders });
       const data = await res.json();
       if (!data.error) {
         setMysteryReady(data.canOpen ?? false);
@@ -128,7 +121,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     if (!mysteryReady || mysteryOpening) return;
     setMysteryOpening(true);
     try {
-      const res = await fetch("/api/mystery-box", {
+      const res = await fetch("/api/mysterybox", {
         method: "POST",
         headers: authHeaders,
       });
@@ -146,9 +139,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     }
   };
 
-  // =========================
-  // LEADERBOARD
-  // =========================
   const fetchLeaderboard = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -165,9 +155,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
-  // =========================
-  // REFERRALS
-  // =========================
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -187,14 +174,14 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     return () => clearInterval(interval);
   }, [fetchReferralStats]);
 
-  // =========================
-  // CLAIM BONUS
-  // =========================
   const handleClaimBonus = async () => {
     if (!canClaim || bonusClaiming) return;
     setBonusClaiming(true);
     try {
-      const res = await fetch("/api/daily-bonus", { method: "POST", headers: authHeaders });
+      const res = await fetch("/api/daily-bonus", {
+        method: "POST",
+        headers: authHeaders,
+      });
       const data = await res.json();
       if (data.success) {
         setBonusResult(data.reward);
@@ -216,7 +203,9 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-primary/50">
-            {user?.photo_url && <AvatarImage src={user.photo_url} alt={displayName} />}
+            {user?.photo_url && (
+              <AvatarImage src={user.photo_url} alt={displayName} />
+            )}
             <AvatarFallback>{avatarInitials}</AvatarFallback>
           </Avatar>
           <div>
@@ -224,6 +213,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
             <h2 className="font-semibold">{displayName}</h2>
           </div>
         </div>
+
         <Button variant="ghost" size="icon" onClick={() => setNotificationsOpen(true)}>
           <Bell className="h-5 w-5" />
         </Button>
@@ -235,12 +225,16 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
           <div className="flex justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Balance</p>
-              <h1 className="text-3xl font-bold">${(wallet?.balance ?? 0).toFixed(2)}</h1>
+              <h1 className="text-3xl font-bold">
+                ${(wallet?.balance ?? 0).toFixed(2)}
+              </h1>
             </div>
             <Badge>
-              <Crown className="h-3 w-3 mr-1" />VIP {user?.vip_level ?? 0}
+              <Crown className="h-3 w-3 mr-1" />
+              VIP {user?.vip_level ?? 0}
             </Badge>
           </div>
+
           <div className="mt-4 flex gap-3">
             <div className="flex-1 p-3 rounded-xl bg-secondary/50">
               <p className="text-xs text-muted-foreground">Coins</p>
@@ -248,13 +242,15 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
             </div>
             <div className="flex-1 p-3 rounded-xl bg-secondary/50">
               <p className="text-xs text-muted-foreground">Earned</p>
-              <p className="font-semibold text-green-400">+${(wallet?.total_earned ?? 0).toFixed(2)}</p>
+              <p className="font-semibold text-green-400">
+                +${(wallet?.total_earned ?? 0).toFixed(2)}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* ⭐️ MYSTERY BOX */}
+      {/* MYSTERY BOX */}
       <Card className="border-primary/50 bg-primary/5 overflow-hidden">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
@@ -295,15 +291,16 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
       {/* SPIN BUTTON */}
       <Button className="h-14 text-lg" onClick={onNavigateToEarn}>
-        <Gift className="mr-2 h-5 w-5" />Spin ({spinsRemaining}/{maxSpins})
+        <Gift className="mr-2 h-5 w-5" />
+        Spin ({spinsRemaining}/{maxSpins})
       </Button>
 
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icon: Zap, label: "Spins", value: `${spinsRemaining}/${maxSpins}` },
-          { icon: TrendingUp, label: "Earned", value: `$${(wallet?.total_earned ?? 0).toFixed(0)}` },
-          { icon: Users, label: "Referrals", value: String(totalReferrals) },
+          { icon: Zap,         label: "Spins",     value: `${spinsRemaining}/${maxSpins}` },
+          { icon: TrendingUp,  label: "Earned",    value: `$${(wallet?.total_earned ?? 0).toFixed(0)}` },
+          { icon: Users,       label: "Referrals", value: String(totalReferrals) },
         ].map(({ icon: Icon, label, value }) => (
           <Card key={label}>
             <CardContent className="flex flex-col items-center p-3">
@@ -315,7 +312,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         ))}
       </div>
 
-      {/* ⭐️ LEADERBOARD PREVIEW */}
+      {/* LEADERBOARD PREVIEW */}
       <Card className="cursor-pointer" onClick={() => setLeaderboardOpen(true)}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
@@ -359,16 +356,33 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
                 Day {currentDay}/7 — ${(DAILY_REWARDS[currentDay - 1] ?? 0).toFixed(2)} today
               </p>
             </div>
-            <Button size="sm" onClick={handleClaimBonus} disabled={!canClaim || bonusClaiming || claimedToday}>
-              {bonusClaiming ? <Loader2 className="h-4 w-4 animate-spin" /> : claimedToday ? "Claimed" : "Claim"}
+            <Button
+              size="sm"
+              onClick={handleClaimBonus}
+              disabled={!canClaim || bonusClaiming || claimedToday}
+            >
+              {bonusClaiming ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : claimedToday ? (
+                "Claimed"
+              ) : (
+                "Claim"
+              )}
             </Button>
           </div>
           <Progress value={(currentDay / 7) * 100} className="mt-3" />
           <div className="mt-2 flex justify-between">
             {DAILY_REWARDS.map((r, i) => (
-              <div key={i} className={`flex flex-col items-center text-[9px] gap-0.5 ${
-                i + 1 < currentDay ? "text-primary" : i + 1 === currentDay ? "text-primary font-bold" : "text-muted-foreground"
-              }`}>
+              <div
+                key={i}
+                className={`flex flex-col items-center text-[9px] gap-0.5 ${
+                  i + 1 < currentDay
+                    ? "text-primary"
+                    : i + 1 === currentDay
+                    ? "text-primary font-bold"
+                    : "text-muted-foreground"
+                }`}
+              >
                 <span>{i + 1 < currentDay ? "✓" : i + 1 === currentDay ? "→" : `D${i + 1}`}</span>
                 <span>${r.toFixed(2)}</span>
               </div>
@@ -377,12 +391,14 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         </CardContent>
       </Card>
 
-      {/* REFERRALS */}
+      {/* REFERRALS CARD */}
       {activeReferrals > 0 && (
         <Card>
           <CardContent className="p-4">
             <p className="font-semibold">Referral Earnings</p>
-            <p className="text-green-400">+${referralEarnings.toFixed(2)} ({activeReferrals} active)</p>
+            <p className="text-green-400">
+              +${referralEarnings.toFixed(2)} ({activeReferrals} active)
+            </p>
           </CardContent>
         </Card>
       )}
@@ -392,7 +408,9 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         <DialogContent className="text-center">
           <Package className="h-14 w-14 text-primary mx-auto mb-3 animate-bounce" />
           <h2 className="text-xl font-bold">Mystery Box Opened!</h2>
-          <p className="text-green-400 text-3xl mt-2 font-bold">+${(mysteryReward ?? 0).toFixed(2)} USDT</p>
+          <p className="text-green-400 text-3xl mt-2 font-bold">
+            +${(mysteryReward ?? 0).toFixed(2)} USDT
+          </p>
           <p className="text-sm text-muted-foreground mt-1">Come back later for another box!</p>
         </DialogContent>
       </Dialog>
@@ -402,7 +420,9 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         <DialogContent className="text-center">
           <CheckCircle2 className="h-12 w-12 text-green-400 mx-auto mb-3" />
           <h2 className="text-xl font-bold">Bonus Claimed!</h2>
-          <p className="text-green-400 text-2xl mt-2 font-bold">+${(bonusResult ?? 0).toFixed(2)} USDT</p>
+          <p className="text-green-400 text-2xl mt-2 font-bold">
+            +${(bonusResult ?? 0).toFixed(2)} USDT
+          </p>
           <p className="text-sm text-muted-foreground mt-1">Day {currentDay} streak</p>
         </DialogContent>
       </Dialog>
@@ -412,15 +432,19 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-400" />Leaderboard
+              <Trophy className="h-5 w-5 text-yellow-400" />
+              Leaderboard
             </DialogTitle>
             <DialogDescription>Top earners all time</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             {leaders.map((leader, i) => (
-              <div key={i} className={`flex items-center gap-3 p-3 rounded-lg ${
-                leader.isCurrentUser ? "bg-primary/20 border border-primary/50" : "bg-secondary/30"
-              }`}>
+              <div
+                key={i}
+                className={`flex items-center gap-3 p-3 rounded-lg ${
+                  leader.isCurrentUser ? "bg-primary/20 border border-primary/50" : "bg-secondary/30"
+                }`}
+              >
                 <span className="font-bold text-sm w-6">#{leader.rank}</span>
                 <span className="flex-1 text-sm">{leader.name}</span>
                 <span className="font-bold text-green-400">${leader.earned.toFixed(2)}</span>
