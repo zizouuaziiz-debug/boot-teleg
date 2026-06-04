@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, Crown, Gift, Users, TrendingUp, Zap, CheckCircle2, Loader2,
-  Package, Trophy, Clock, Star,
+  Package, Trophy, Clock,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -88,11 +88,14 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     try {
       const res = await fetch("/api/spin", { headers: authHeaders });
       const data = await res.json();
+      console.log("Spin API response:", data);
       if (!data.error) {
         setSpinsRemaining(data.spinsRemaining ?? 0);
         setMaxSpins(data.maxSpins ?? 3);
       }
-    } catch {}
+    } catch (e) {
+      console.error("Spin fetch error:", e);
+    }
   }, [telegramId, authHeaders]);
 
   useEffect(() => {
@@ -292,7 +295,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       {/* SPIN BUTTON */}
       <Button className="h-14 text-lg" onClick={onNavigateToEarn}>
         <Gift className="mr-2 h-5 w-5" />
-        Spin ({spinsRemaining}/{maxSpins})
+        Spin
       </Button>
 
       {/* STATS */}
