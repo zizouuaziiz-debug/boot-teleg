@@ -29,10 +29,11 @@ export async function GET(req: NextRequest) {
       minWatchPercent:    data?.min_watch_percent   ?? 80,
       vipMultiplier:      data?.vip_multiplier      ?? 1.5,
       spinDailyLimit:     data?.spin_daily_limit    ?? 3,
-      // Watch & Earn Ads config
       maxDailyAds:        data?.max_daily_ads       ?? 5,
       rewardPerAd:        data?.reward_per_ad       ?? 0.05,
       adCooldownSeconds:  data?.ad_cooldown_seconds ?? 30,
+      mysteryCooldown:    data?.mystery_cooldown    ?? 4,
+      mysteryMaxReward:   data?.mystery_max_reward  ?? 2,
     },
     depositAddresses: {
       tron: depositAddresses.tron ?? "",
@@ -68,10 +69,11 @@ export async function POST(req: NextRequest) {
   if (settings.minWatchPercent    !== undefined) payload.min_watch_percent    = settings.minWatchPercent;
   if (settings.vipMultiplier      !== undefined) payload.vip_multiplier       = settings.vipMultiplier;
   if (settings.spinDailyLimit     !== undefined) payload.spin_daily_limit     = settings.spinDailyLimit;
-  // Watch & Earn Ads
   if (settings.maxDailyAds        !== undefined) payload.max_daily_ads        = settings.maxDailyAds;
   if (settings.rewardPerAd        !== undefined) payload.reward_per_ad        = settings.rewardPerAd;
   if (settings.adCooldownSeconds  !== undefined) payload.ad_cooldown_seconds  = settings.adCooldownSeconds;
+  if (settings.mysteryCooldown    !== undefined) payload.mystery_cooldown     = settings.mysteryCooldown;
+  if (settings.mysteryMaxReward   !== undefined) payload.mystery_max_reward   = settings.mysteryMaxReward;
 
   if (body.depositAddresses) payload.deposit_addresses  = body.depositAddresses;
   if (body.nowpayments)      payload.nowpayments_config = body.nowpayments;
