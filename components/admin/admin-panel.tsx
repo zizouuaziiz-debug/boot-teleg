@@ -1631,38 +1631,69 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
 
   return (
     <div className="max-w-2xl space-y-6">
-      {/* ⭐️ MYSTERY BOX CONFIG - جديد */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gift className="h-5 w-5 text-amber-400" />
-            Mystery Box Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Cooldown (hours)</label>
-              <Input
-                type="number"
-                value={localSettings.mysteryCooldown}
-                onChange={e => setLocalSettings(p => ({ ...p, mysteryCooldown: parseInt(e.target.value) || 4 }))}
-                className="bg-secondary/50"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Max Reward (USDT)</label>
-              <Input
-                type="number"
-                step="0.5"
-                value={localSettings.mysteryMaxReward}
-                onChange={e => setLocalSettings(p => ({ ...p, mysteryMaxReward: parseFloat(e.target.value) || 2 }))}
-                className="bg-secondary/50"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+{/* MYSTERY BOX CONFIG */}
+<Card className="glass-card">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Gift className="h-5 w-5 text-amber-400" />
+      Mystery Box Configuration
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Cooldown (hours)</label>
+        <Input
+          type="number"
+          value={localSettings.mysteryCooldown}
+          onChange={e => setLocalSettings(p => ({ ...p, mysteryCooldown: parseInt(e.target.value) || 4 }))}
+          className="bg-secondary/50"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Max Reward (USDT)</label>
+        <Input
+          type="number"
+          step="0.5"
+          value={localSettings.mysteryMaxReward}
+          onChange={e => setLocalSettings(p => ({ ...p, mysteryMaxReward: parseFloat(e.target.value) || 2 }))}
+          className="bg-secondary/50"
+        />
+      </div>
+    </div>
+    {/* ⭐️ زر الحفظ */}
+    <Button
+      className="primary-gradient"
+      onClick={async () => {
+        try {
+          const res = await fetch("/api/admin/settings", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              settings: {
+                mysteryCooldown: localSettings.mysteryCooldown,
+                mysteryMaxReward: localSettings.mysteryMaxReward,
+              },
+            }),
+          })
+          const d = await res.json()
+          if (d.success) {
+            setNotifyStatus({ type: "success", text: "Mystery Box settings saved!" })
+          } else {
+            setNotifyStatus({ type: "error", text: "Failed to save" })
+          }
+          setTimeout(() => setNotifyStatus(null), 3000)
+        } catch {
+          setNotifyStatus({ type: "error", text: "Network error" })
+          setTimeout(() => setNotifyStatus(null), 3000)
+        }
+      }}
+    >
+      Save Mystery Box Settings
+    </Button>
+  </CardContent>
+</Card>
 
       {/* ⭐️ SPIN CONFIG - جديد */}
       <Card className="glass-card">
