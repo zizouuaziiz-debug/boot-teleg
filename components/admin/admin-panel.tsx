@@ -1632,7 +1632,7 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
 
   return (
     <div className="max-w-2xl space-y-6">
-{/* MYSTERY BOX CONFIG */}
+      {/* MYSTERY BOX CONFIG */}
 <Card className="glass-card">
   <CardHeader>
     <CardTitle className="flex items-center gap-2">
@@ -1662,7 +1662,6 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
         />
       </div>
     </div>
-    {/* ⭐️ زر الحفظ */}
     <Button
       className="primary-gradient"
       onClick={async () => {
@@ -1680,18 +1679,16 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
           })
           const d = await res.json()
           if (d.success) {
-            setNotifyStatus({ type: "success", text: "Mystery Box settings saved!" })
+            alert("✅ Mystery Box settings saved!")
           } else {
-            setNotifyStatus({ type: "error", text: "Failed to save" })
+            alert("❌ Failed to save")
           }
-          setTimeout(() => setNotifyStatus(null), 3000)
         } catch {
-          setNotifyStatus({ type: "error", text: "Network error" })
-          setTimeout(() => setNotifyStatus(null), 3000)
+          alert("❌ Network error")
         }
       }}
     >
-      Save Mystery Box Settings
+      💾 Save Mystery Box Settings
     </Button>
   </CardContent>
 </Card>
