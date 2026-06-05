@@ -301,7 +301,6 @@ export function AdminPanel() {
 function DashboardContent({ stats, quickStats, withdrawals }: { stats: any[]; quickStats: any; withdrawals: Withdrawal[] }) {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* MAIN STATS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => { const Icon = stat.icon; return (
           <div key={stat.label} className={glassCard} style={glassBg}>
@@ -312,8 +311,6 @@ function DashboardContent({ stats, quickStats, withdrawals }: { stats: any[]; qu
           </div>
         )})}
       </div>
-
-      {/* QUICK STATS */}
       <div className="grid gap-4 md:grid-cols-4">
         {[
           { label: "Today's Earnings", value: `$${quickStats.todayEarnings?.toFixed(2) || "0.00"}`, icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/20" },
@@ -329,8 +326,6 @@ function DashboardContent({ stats, quickStats, withdrawals }: { stats: any[]; qu
           </div>
         )})}
       </div>
-
-      {/* RECENT WITHDRAWALS */}
       <div className={glassCard} style={glassBg}>
         <div className="p-5">
           <h3 className="font-bold text-lg mb-4">Recent Withdrawals</h3>
@@ -377,7 +372,6 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
         <div className="relative flex-1 max-w-md"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" /><Input placeholder="Search users..." className="pl-10 bg-white/5 border-white/10 text-white rounded-xl" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
         <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-32 bg-white/5 border-white/10 text-white rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select>
       </div>
-
       <div className={glassCard} style={glassBg}>
         <div className="p-0 overflow-x-auto">
           <Table><TableHeader><TableRow className="border-white/5"><TableHead className="text-gray-400">User</TableHead><TableHead className="text-gray-400">Balance</TableHead><TableHead className="text-gray-400">Referrals</TableHead><TableHead className="text-gray-400">VIP</TableHead><TableHead className="text-gray-400">Status</TableHead><TableHead className="text-gray-400 text-right">Actions</TableHead></TableRow></TableHeader>
@@ -405,7 +399,6 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
           </Table>
         </div>
       </div>
-
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-400">Showing {filtered.length} of {totalUsers} · Page {currentPage} of {totalPages}</p>
         <div className="flex gap-2">
@@ -413,7 +406,6 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
           <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => onPageChange(currentPage + 1)} className="border-white/10 text-gray-400 rounded-lg">Next →</Button>
         </div>
       </div>
-
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}><DialogContent className="border-0 rounded-3xl" style={glassStyle}><DialogHeader><DialogTitle className="text-white">Delete User</DialogTitle><DialogDescription className="text-gray-400">Delete {selectedUser ? userDisplayName(selectedUser) : ""}?</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="border-white/10 text-white rounded-xl">Cancel</Button><Button variant="destructive" onClick={() => { if (selectedUser) { onDeleteUser(selectedUser.id); setShowDeleteDialog(false); setSelectedUser(null) } }} className="rounded-xl">Delete</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}><DialogContent className="border-0 rounded-3xl" style={glassStyle}><DialogHeader><DialogTitle className="text-white">Edit Balance</DialogTitle><DialogDescription className="text-gray-400">Current: ${selectedUser?.balance.toFixed(2)}</DialogDescription></DialogHeader><div className="py-4"><Input type="number" value={editBalance} onChange={e => setEditBalance(e.target.value)} className="bg-white/5 border-white/10 text-white rounded-xl" step="0.01" min="0" /></div><DialogFooter><Button variant="outline" onClick={() => setShowEditDialog(false)} className="border-white/10 text-white rounded-xl">Cancel</Button><Button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl" onClick={() => { if (selectedUser && editBalance) { onUpdateBalance(selectedUser.id, parseFloat(editBalance)); setShowEditDialog(false) } }}>Save</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}><DialogContent className="border-0 rounded-3xl" style={glassStyle}><DialogHeader><DialogTitle className="text-white flex items-center gap-2"><PlusCircle className="h-5 w-5 text-green-400" />Add Balance</DialogTitle><DialogDescription className="text-gray-400">Credit to {selectedUser ? userDisplayName(selectedUser) : ""} (${selectedUser?.balance.toFixed(2)})</DialogDescription></DialogHeader><div className="py-4 space-y-4"><Input type="number" value={addAmount} onChange={e => setAddAmount(e.target.value)} className="bg-white/5 border-white/10 text-white rounded-xl" step="0.01" min="0.01" placeholder="0.00" autoFocus />{addAmount && parseFloat(addAmount) > 0 && <div className="rounded-xl bg-green-500/10 border border-green-500/30 p-3"><p className="text-green-400 font-bold">${((selectedUser?.balance ?? 0) + parseFloat(addAmount)).toFixed(2)} USDT</p></div>}</div><DialogFooter><Button variant="outline" onClick={() => setShowAddDialog(false)} className="border-white/10 text-white rounded-xl">Cancel</Button><Button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl" disabled={!addAmount || parseFloat(addAmount) <= 0} onClick={() => { if (selectedUser && addAmount && parseFloat(addAmount) > 0) { onAddBalance(selectedUser.id, parseFloat(addAmount)); setShowAddDialog(false); setAddAmount("") } }}>Add ${parseFloat(addAmount || "0").toFixed(2)}</Button></DialogFooter></DialogContent></Dialog>
@@ -429,7 +421,6 @@ function WithdrawalsContent({ withdrawals, onApprove, onReject }: { withdrawals:
   const pending = withdrawals.filter(w => w.status === "pending")
   const approved = withdrawals.filter(w => w.status === "approved")
   const rejected = withdrawals.filter(w => w.status === "rejected")
-
   const renderTable = (rows: Withdrawal[], showActions = false) => (
     <div className={glassCard} style={glassBg}>
       {rows.length === 0 ? <div className="flex items-center justify-center py-12 text-gray-500">No withdrawals</div> :
@@ -438,7 +429,6 @@ function WithdrawalsContent({ withdrawals, onApprove, onReject }: { withdrawals:
       }
     </div>
   )
-
   return <div className="space-y-6 animate-in fade-in duration-500">
     <Tabs defaultValue="pending"><TabsList className="bg-white/5 border border-white/10 rounded-xl"><TabsTrigger value="pending" className="data-[state=active]:bg-purple-600 rounded-lg">Pending ({pending.length})</TabsTrigger><TabsTrigger value="approved" className="data-[state=active]:bg-purple-600 rounded-lg">Approved ({approved.length})</TabsTrigger><TabsTrigger value="rejected" className="data-[state=active]:bg-purple-600 rounded-lg">Rejected ({rejected.length})</TabsTrigger></TabsList><TabsContent value="pending" className="mt-4">{renderTable(pending, true)}</TabsContent><TabsContent value="approved" className="mt-4">{renderTable(approved, false)}</TabsContent><TabsContent value="rejected" className="mt-4">{renderTable(rejected, false)}</TabsContent></Tabs>
   </div>
@@ -452,7 +442,6 @@ function AnalyticsContent({ users, withdrawals, quickStats }: { users: User[]; w
   const totalEarnings = users.reduce((s, u) => s + u.totalEarnings, 0)
   const totalPayouts = withdrawals.filter(w => w.status === "approved").reduce((s, w) => s + w.amount, 0)
   const avgBalance = users.length > 0 ? users.reduce((s, u) => s + u.balance, 0) / users.length : 0
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -462,9 +451,7 @@ function AnalyticsContent({ users, withdrawals, quickStats }: { users: User[]; w
           { label: "Avg Balance", value: `$${avgBalance.toFixed(2)}`, sub: "Per user" },
           { label: "Total Earned", value: `$${totalEarnings.toFixed(2)}`, sub: "All time" },
         ].map(s => (
-          <div key={s.label} className={glassCard} style={glassBg}>
-            <div className="p-5"><p className="text-sm text-gray-400">{s.label}</p><p className="text-3xl font-bold">{s.value}</p><p className="text-xs text-gray-500 mt-1">{s.sub}</p></div>
-          </div>
+          <div key={s.label} className={glassCard} style={glassBg}><div className="p-5"><p className="text-sm text-gray-400">{s.label}</p><p className="text-3xl font-bold">{s.value}</p><p className="text-xs text-gray-500 mt-1">{s.sub}</p></div></div>
         ))}
       </div>
       <div className={glassCard} style={glassBg}>
@@ -479,7 +466,7 @@ function AnalyticsContent({ users, withdrawals, quickStats }: { users: User[]; w
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SETTINGS (with Mystery Box & Spin config)
+// SETTINGS (with Notification handler)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
@@ -495,6 +482,12 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
   const [addrSaving, setAddrSaving] = useState(false); const [addrMsg, setAddrMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [nowpaymentsKey, setNowpaymentsKey] = useState(""); const [nowpaymentsIpnSecret, setNowpaymentsIpnSecret] = useState("")
   const [nowpaymentsSaving, setNowpaymentsSaving] = useState(false); const [nowpaymentsMsg, setNowpaymentsMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  
+  // ⭐️ Notification state
+  const [notifyMsg, setNotifyMsg] = useState("")
+  const [notifySending, setNotifySending] = useState(false)
+  const [notifyStatus, setNotifyStatus] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
   const DEFAULT_VIP_PLANS = [{ level: 0, name: "Free", price: 0, bonus: "1%" }, { level: 1, name: "Bronze", price: 50, bonus: "5%" }, { level: 2, name: "Silver", price: 150, bonus: "10%" }, { level: 3, name: "Gold", price: 500, bonus: "20%" }, { level: 4, name: "Platinum", price: 1000, bonus: "35%" }, { level: 5, name: "Diamond", price: 2000, bonus: "50%" }]
   const DEFAULT_RATES = { basic: { daily_rate: 0.01, min_vip: 0 }, silver: { daily_rate: 0.02, min_vip: 1 }, gold: { daily_rate: 0.035, min_vip: 2 }, diamond: { daily_rate: 0.05, min_vip: 3 }, ultimate: { daily_rate: 0.07, min_vip: 4 } }
   const [vipPlans, setVipPlans] = useState(DEFAULT_VIP_PLANS); const [vipPlansSaving, setVipSaving] = useState(false); const [vipPlansMsg, setVipMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -525,6 +518,32 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
     try { await fetch("/api/admin/settings", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(localSettings) }); onUpdateSettings(localSettings) } catch {} finally { setIsSaving(false) }
   }
 
+  // ⭐️ Send notification handler
+  const handleSendNotification = async () => {
+    if (!notifyMsg.trim()) return
+    setNotifySending(true)
+    setNotifyStatus(null)
+    try {
+      const res = await fetch("/api/admin/notify", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: notifyMsg }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setNotifyMsg("")
+        setNotifyStatus({ type: "success", text: "Notification sent to all users!" })
+      } else {
+        setNotifyStatus({ type: "error", text: data.error || "Failed to send" })
+      }
+    } catch {
+      setNotifyStatus({ type: "error", text: "Network error" })
+    } finally {
+      setNotifySending(false)
+      setTimeout(() => setNotifyStatus(null), 3000)
+    }
+  }
+
   return (
     <div className="max-w-2xl space-y-6 animate-in fade-in duration-500">
       {/* MYSTERY BOX CONFIG */}
@@ -549,13 +568,30 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
         </div>
       </div>
 
-      {/* NOTIFICATIONS */}
+      {/* ⭐️ NOTIFICATIONS - WORKING */}
       <div className={glassCard} style={glassBg}>
         <div className="p-5">
           <h3 className="font-bold text-lg flex items-center gap-2"><Bell className="h-5 w-5 text-blue-400" />Send Notification</h3>
           <div className="space-y-3 mt-4">
-            <Textarea placeholder="Message to all users..." className="bg-white/5 border-white/10 text-white rounded-xl min-h-[80px]" />
-            <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl"><Send className="mr-2 h-4 w-4" />Send to All Users</Button>
+            <Textarea
+              placeholder="Message to all users..."
+              value={notifyMsg}
+              onChange={e => setNotifyMsg(e.target.value)}
+              className="bg-white/5 border-white/10 text-white rounded-xl min-h-[80px]"
+            />
+            {notifyStatus && (
+              <p className={`text-sm ${notifyStatus.type === "success" ? "text-green-400" : "text-red-400"}`}>
+                {notifyStatus.text}
+              </p>
+            )}
+            <Button
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl"
+              onClick={handleSendNotification}
+              disabled={notifySending || !notifyMsg.trim()}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {notifySending ? "Sending..." : "Send to All Users"}
+            </Button>
           </div>
         </div>
       </div>
@@ -628,7 +664,7 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// VIDEOS (unchanged from original)
+// VIDEOS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface VideoItem { id: string; title: string; company: string; youtube_url: string; reward: number; duration: number; active: boolean; created_at: string }
@@ -637,7 +673,6 @@ function VideosContent({ showNotification }: { showNotification: (t: "success" |
   const [videos, setVideos] = useState<VideoItem[]>([]); const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAdd] = useState(false); const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ title: "", company: "", youtube_url: "", reward: "0.05", duration: "30" })
-
   const load = async () => { setLoading(true); try { const res = await fetch("/api/admin/videos", { credentials: "include" }); const data = await res.json(); if (data.videos) setVideos(data.videos) } catch { showNotification("error", "Failed to load videos") } finally { setLoading(false) } }
   useEffect(() => { load() }, [])
 
@@ -653,7 +688,7 @@ function VideosContent({ showNotification }: { showNotification: (t: "success" |
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AD NETWORKS (unchanged from original - kept brief for length)
+// AD NETWORKS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function AdNetworksContent() {
@@ -661,7 +696,7 @@ function AdNetworksContent() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LIVE FEED (unchanged from original - kept brief for length)
+// LIVE FEED
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function LiveFeedContent() {
