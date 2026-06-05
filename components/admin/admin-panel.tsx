@@ -1479,7 +1479,7 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
   const [nowpaymentsIpnSecret, setNowpaymentsIpnSecret] = useState("")
   const [nowpaymentsSaving,    setNowpaymentsSaving]    = useState(false)
   const [nowpaymentsMsg,       setNowpaymentsMsg]       = useState<{ type: "success"|"error"; text: string }|null>(null)
-  const [notifyStatus, setNotifyStatus] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  
 
   // ⭐️ Notification state
   const [notifyMsg, setNotifyMsg] = useState("")
