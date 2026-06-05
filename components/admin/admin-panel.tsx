@@ -1678,11 +1678,7 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
             }),
           })
           const d = await res.json()
-          if (d.success) {
-            alert("✅ Mystery Box settings saved!")
-          } else {
-            alert("❌ Failed to save")
-          }
+          alert(d.success ? "✅ Saved!" : "❌ Failed to save")
         } catch {
           alert("❌ Network error")
         }
