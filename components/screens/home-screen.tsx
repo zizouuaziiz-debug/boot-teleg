@@ -85,6 +85,37 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     .toUpperCase()
     .slice(0, 2);
 
+  // ⭐️ Notification listener
+  useEffect(() => {
+    if (!telegramId) return;
+    let channel: any;
+    let supabaseClient: any;
+
+    const init = async () => {
+      const { createClient } = await import("@supabase/supabase-js");
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!url || !key) return;
+
+      supabaseClient = createClient(url, key, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+
+      channel = supabaseClient
+        .channel("admin:live")
+        .on("broadcast", { event: "admin_notification" }, ({ payload }: any) => {
+          alert(`📢 ${payload.message}`);
+        })
+        .subscribe();
+    };
+
+    init();
+
+    return () => {
+      if (supabaseClient && channel) supabaseClient.removeChannel(channel);
+    };
+  }, [telegramId]);
+
   const fetchBonusState = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -111,35 +142,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       }
     } catch (error) {}
   }, [telegramId, authHeaders]);
-  useEffect(() => {
-  if (!telegramId) return;
-  
-  let channel: any;
-  
-  const init = async () => {
-    const { createClient } = await import("@supabase/supabase-js");
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return;
-    
-    const supabase = createClient(url, key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    
-    channel = supabase
-      .channel("admin:live")
-      .on("broadcast", { event: "admin_notification" }, ({ payload }: any) => {
-        alert(`📢 ${payload.message}`);
-      })
-      .subscribe();
-  };
-  
-  init();
-  
-  return () => {
-    if (channel) supabase.removeChannel(channel);
-  };
-}, [telegramId]);
 
   useEffect(() => { fetchSpinState(); }, [fetchSpinState]);
 
