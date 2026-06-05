@@ -26,7 +26,7 @@ const DEFAULT_VIP_LEVELS = [
 
 const faqItems = [
   { question: "How do I earn USDT?", answer: "Watch videos, complete daily tasks, participate in the lucky wheel, and invite friends to earn USDT rewards." },
-  { question: "What is the minimum withdrawal?", answer: "The minimum withdrawal amount is $10 USDT. Withdrawals are processed within 24-48 hours." },
+  { question: "What is the minimum withdrawal?", answer: "The minimum withdrawal amount is $50 USDT for Free users And 20$ for VIP users. Withdrawals are processed within 24-48 hours." },
   { question: "How does the referral program work?", answer: "Share your referral code with friends. When they sign up and start earning, you receive a percentage of their earnings based on your VIP level." },
   { question: "How do I upgrade my VIP level?", answer: "You can upgrade your VIP level by depositing the required amount. Higher VIP levels give you better earning bonuses and referral rates." },
 ]
