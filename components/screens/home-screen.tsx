@@ -109,15 +109,16 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
         channel.on("broadcast", { event: "admin_notification" }, (payload: any) => {
           const message = payload.payload?.message || "New notification!";
+          const tg = (window as any).Telegram;
 
-          if (window.Telegram?.WebApp?.showPopup) {
-            window.Telegram.WebApp.showPopup({
+          if (tg?.WebApp?.showPopup) {
+            tg.WebApp.showPopup({
               title: "📢 Notification",
               message: message,
               buttons: [{ type: "ok" }],
             });
-          } else if (window.Telegram?.WebApp?.showAlert) {
-            window.Telegram.WebApp.showAlert(`📢 ${message}`);
+          } else if (tg?.WebApp?.showAlert) {
+            tg.WebApp.showAlert(`📢 ${message}`);
           }
         });
 
