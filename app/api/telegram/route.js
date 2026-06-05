@@ -4,9 +4,6 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_TELEGRAM_ID;
 
-// 🔒 قفل لمنع تشغيل broadcast مرتين
-let isBroadcastRunning = false;
-
 // ── /start ─────────────────────────────
 bot.start(async (ctx) => {
   const startParam = ctx.startPayload || "";
@@ -48,53 +45,99 @@ bot.command("broadcast", async (ctx) => {
     return ctx.reply("⚠️ اكتب رسالة بعد الأمر");
   }
 
-  // 🔒 منع تشغيل مرتين
-  if (isBroadcastRunning) {
+  const supabase = getSupabaseAdmin();
+
+  // ⭐️ تحقق إذا فيه broadcast قيد التنفيذ (خلال آخر 5 دقائق)
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const { data: running } = await supabase
+    .from("broadcast_logs")
+    .select("id")
+    .eq("status", "running")
+    .gte("created_at", fiveMinAgo)
+    .limit(1);
+
+  if (running && running.length > 0) {
     return ctx.reply("⏳ يوجد إرسال قيد التنفيذ، انتظر...");
   }
 
-  isBroadcastRunning = true;
+  // ⭐️ سجل broadcast جديد
+  const { data: log } = await supabase
+    .from("broadcast_logs")
+    .insert({ message, status: "running" })
+    .select()
+    .single();
+
+  if (!log) {
+    return ctx.reply("❌ فشل في بدء الإرسال");
+  }
 
   const waitMsg = await ctx.reply("⏳ جاري الإرسال...");
 
   try {
-    const supabase = getSupabaseAdmin();
     const { data: users } = await supabase
       .from("users")
-      .select("telegram_id");
+      .select("telegram_id")
+      .eq("status", "active");
 
     let success = 0;
     let failed = 0;
+    const shuffled = [...(users || [])].sort(() => Math.random() - 0.5);
 
-    // ⭐ يمنع التكرار داخل نفس العملية
-    const sent = new Set();
+    for (const user of shuffled) {
+      const id = String(user.telegram_id);
+      if (!id) continue;
 
-    for (const user of users || []) {
-      const id = user.telegram_id;
+      // ⭐️ تحقق إذا الرسالة انرسلت له بالفعل
+      const { data: alreadySent } = await supabase
+        .from("broadcast_sent")
+        .select("id")
+        .eq("broadcast_id", log.id)
+        .eq("telegram_id", id)
+        .limit(1);
 
-      if (!id || sent.has(id)) continue;
-      sent.add(id);
+      if (alreadySent && alreadySent.length > 0) continue;
 
       try {
         await bot.telegram.sendMessage(id, message);
+        
+        // ⭐️ سجل إنها انرسلت
+        await supabase.from("broadcast_sent").insert({
+          broadcast_id: log.id,
+          telegram_id: id,
+        });
+        
         success++;
+        await new Promise(r => setTimeout(r, 50));
       } catch {
         failed++;
       }
     }
 
+    // ⭐️ حدث الـ log
+    await supabase
+      .from("broadcast_logs")
+      .update({
+        total_users: users?.length || 0,
+        success_count: success,
+        failed_count: failed,
+        status: "completed",
+      })
+      .eq("id", log.id);
+
     await ctx.telegram.editMessageText(
       waitMsg.chat.id,
       waitMsg.message_id,
       undefined,
-      `📊 تم الإرسال\n\n👥 ${users.length}\n✅ ${success}\n❌ ${failed}`
+      `📊 تم الإرسال\n\n👥 ${users?.length || 0}\n✅ ${success}\n❌ ${failed}`
     );
 
   } catch (err) {
     console.error(err);
+    await supabase
+      .from("broadcast_logs")
+      .update({ status: "failed" })
+      .eq("id", log.id);
     await ctx.reply("❌ حدث خطأ أثناء الإرسال");
-  } finally {
-    isBroadcastRunning = false;
   }
 });
 
