@@ -85,34 +85,54 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  // ⭐️ Notification listener
+  // ⭐️ Notification listener for Telegram Mini App
   useEffect(() => {
     if (!telegramId) return;
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return;
+
     let channel: any;
-    let supabaseClient: any;
+    let client: any;
 
     const init = async () => {
-      const { createClient } = await import("@supabase/supabase-js");
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (!url || !key) return;
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        client = createClient(url, key, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
 
-      supabaseClient = createClient(url, key, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
+        channel = client.channel("admin:live", {
+          config: { broadcast: { self: true } },
+        });
 
-      channel = supabaseClient
-        .channel("admin:live")
-        .on("broadcast", { event: "admin_notification" }, ({ payload }: any) => {
-          alert(`📢 ${payload.message}`);
-        })
-        .subscribe();
+        channel.on("broadcast", { event: "admin_notification" }, (payload: any) => {
+          const message = payload.payload?.message || "New notification!";
+
+          if (window.Telegram?.WebApp?.showPopup) {
+            window.Telegram.WebApp.showPopup({
+              title: "📢 Notification",
+              message: message,
+              buttons: [{ type: "ok" }],
+            });
+          } else if (window.Telegram?.WebApp?.showAlert) {
+            window.Telegram.WebApp.showAlert(`📢 ${message}`);
+          }
+        });
+
+        channel.subscribe((status: string) => {
+          console.log("Notification channel:", status);
+        });
+      } catch (error) {
+        console.error("Notification init error:", error);
+      }
     };
 
     init();
 
     return () => {
-      if (supabaseClient && channel) supabaseClient.removeChannel(channel);
+      if (channel) client?.removeChannel(channel).catch(() => {});
     };
   }, [telegramId]);
 
