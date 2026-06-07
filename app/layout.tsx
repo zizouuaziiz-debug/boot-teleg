@@ -24,10 +24,7 @@ export default function RootLayout({
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"
         />
-        <Script
-          src="https://adsgram.ai/sdk.js"
-          strategy="afterInteractive"
-        />
+        
         <ServiceWorkerRegistrar />
         <UserProvider>{children}</UserProvider>
       </body>
