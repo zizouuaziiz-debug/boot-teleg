@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-
+import { useAdsgram } from "@/hooks/useAdsgram";
 import { useUser } from "@/context/user-context";
 
 interface HomeScreenProps {
@@ -217,33 +217,27 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   };
 
   // ⭐️ Ads handlers
+  const onAdReward = useCallback(async () => {
+  await refreshWallet();
+  await fetchAdStatus();
+}, [refreshWallet, fetchAdStatus]);
+
+const onAdError = useCallback((result: any) => {
+  console.error("Ad error:", result);
+}, []);
+
+const showAd = useAdsgram({
+  blockId: 34448,
+  onReward: onAdReward,
+  onError: onAdError,
+});
   const handleWatchAd = async () => {
   if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
-
   try {
-    const Adsgram = (window as any).Adsgram;
-    
-    if (!Adsgram) {
-      alert("AdsGram SDK not loaded. Please try again.");
-      setWatchingAd(false);
-      return;
-    }
-
-    const controller = Adsgram.init({
-      blockId: 34448,
-      debug: true,
-    });
-
-    await controller.show();
-    
-    await refreshWallet();
-    await fetchAdStatus();
-  } catch (error: any) {
-    console.error("Ad error:", error);
-  } finally {
-    setWatchingAd(false);
-  }
+    await showAd();
+  } catch {}
+  setWatchingAd(false);
 };
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
