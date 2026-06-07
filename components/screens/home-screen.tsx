@@ -232,7 +232,6 @@ const showAd = useAdsgram({
   onError: onAdError,
 });
   const handleWatchAd = async () => {
-  const handleWatchAd = async () => {
   alert("1. Button clicked");
   
   if (watchingAd || adsWatched >= maxAdsPerDay) {
