@@ -218,21 +218,11 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
   // ⭐️ Ads handlers
   const handleWatchAd = async () => {
+  const handleWatchAd = async () => {
   if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
 
   try {
-    // نحمّل الـ SDK إذا مو موجود
-    if (!(window as any).Adsgram) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://sad.adsgram.ai/js/sad.min.js';
-        script.onload = () => setTimeout(resolve, 1000);
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-    }
-
     const Adsgram = (window as any).Adsgram || (window as any).SAD;
     
     if (!Adsgram) {
@@ -241,13 +231,13 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       return;
     }
 
-    const controller = Adsgram.init({ blockId: "34448", debug: true });
+    const controller = Adsgram.init({ blockId: "34448" }); // ⭐️ حذف debug: true
     await controller.show();
 
     await refreshWallet();
     await fetchAdStatus();
   } catch (error: any) {
-    alert("Error: " + (error?.message || JSON.stringify(error)));
+    console.error("Ad error:", error);
   } finally {
     setWatchingAd(false);
   }
