@@ -1606,19 +1606,20 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
 
   // ⭐️ Send notification handler
   const handleSendNotification = async () => {
-    if (!notifyMsg.trim()) return
+    if (!notifyMsg.trim() && !notifyImageUrl.trim()) return
     setNotifySending(true)
     setNotifyStatus(null)
     try {
       const res = await fetch("/api/admin/notify", {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: notifyMsg }),
+        body: JSON.stringify({ message: notifyMsg, imageUrl: notifyImageUrl }),
       })
       const data = await res.json()
       if (data.success) {
         setNotifyMsg("")
-        setNotifyStatus({ type: "success", text: "Notification sent to all users!" })
+        setNotifyImageUrl("")
+        setNotifyStatus({ type: "success", text: "✅ Sent to all users!" })
       } else {
         setNotifyStatus({ type: "error", text: data.error || "Failed to send" })
       }
