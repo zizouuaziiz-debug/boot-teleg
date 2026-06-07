@@ -232,11 +232,24 @@ const showAd = useAdsgram({
   onError: onAdError,
 });
   const handleWatchAd = async () => {
-  if (watchingAd || adsWatched >= maxAdsPerDay) return;
+  const handleWatchAd = async () => {
+  alert("1. Button clicked");
+  
+  if (watchingAd || adsWatched >= maxAdsPerDay) {
+    alert("2. Blocked: " + watchingAd + ", " + adsWatched);
+    return;
+  }
+  
   setWatchingAd(true);
+  alert("3. Calling showAd...");
+  
   try {
     await showAd();
-  } catch {}
+    alert("4. Ad completed!");
+  } catch (e: any) {
+    alert("5. Error: " + JSON.stringify(e));
+  }
+  
   setWatchingAd(false);
 };
   const fetchReferralStats = useCallback(async () => {
