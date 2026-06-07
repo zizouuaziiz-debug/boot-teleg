@@ -220,31 +220,29 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
   // ⭐️ Handle watch ad
   const handleWatchAd = async () => {
-    if (watchingAd || adsWatched >= maxAdsPerDay) return;
-    setWatchingAd(true);
+  if (watchingAd || adsWatched >= maxAdsPerDay) return;
+  setWatchingAd(true);
 
-    try {
-      const { AdManager } = await import("@adsgram/web-sdk");
-      const manager = new AdManager({
-        apiKey: process.env.NEXT_PUBLIC_ADSGRAM_API_KEY!,
-      });
+  try {
+    const { AdsGram } = await import("@adsgram/react");
+    
+    const result = await AdsGram.showRewardedVideo({
+      appId: process.env.NEXT_PUBLIC_ADSGRAM_API_KEY,
+      userId: telegramId,
+    });
 
-      const result = await manager.showRewardedVideo({
-        userId: telegramId,
-      });
-
-      if (result.success) {
-        setTimeout(async () => {
-          await refreshWallet();
-          await fetchAdStatus();
-        }, 3000);
-      }
-    } catch (error) {
-      console.error("Ad error:", error);
-    } finally {
-      setWatchingAd(false);
+    if (result.success) {
+      setTimeout(async () => {
+        await refreshWallet();
+        await fetchAdStatus();
+      }, 3000);
     }
-  };
+  } catch (error) {
+    console.error("Ad error:", error);
+  } finally {
+    setWatchingAd(false);
+  }
+};
 
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
