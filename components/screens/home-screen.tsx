@@ -222,30 +222,25 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   setWatchingAd(true);
 
   try {
-    const loadAdsgram = (): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        if ((window as any).Adsgram) {
-          resolve((window as any).Adsgram);
-          return;
-        }
-
+    // نحمّل الـ SDK إذا مو موجود
+    if (!(window as any).Adsgram) {
+      await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://adsgram.ai/sdk.js';
-        script.onload = () => {
-          setTimeout(() => {
-            if ((window as any).Adsgram) {
-              resolve((window as any).Adsgram);
-            } else {
-              reject(new Error('Adsgram not available after load'));
-            }
-          }, 1000);
-        };
-        script.onerror = () => reject(new Error('Failed to load Adsgram'));
+        script.src = 'https://sad.adsgram.ai/js/sad.min.js';
+        script.onload = () => setTimeout(resolve, 1000);
+        script.onerror = reject;
         document.head.appendChild(script);
       });
-    };
+    }
 
-    const Adsgram = await loadAdsgram();
+    const Adsgram = (window as any).Adsgram || (window as any).SAD;
+    
+    if (!Adsgram) {
+      alert("AdsGram not loaded");
+      setWatchingAd(false);
+      return;
+    }
+
     const controller = Adsgram.init({ blockId: "34448", debug: true });
     await controller.show();
 
