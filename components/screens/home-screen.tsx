@@ -1,5 +1,5 @@
 "use client";
-
+import { useAdsgram } from "@/hooks/useAdsgram";
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, Crown, Gift, Users, TrendingUp, Zap, CheckCircle2, Loader2,
