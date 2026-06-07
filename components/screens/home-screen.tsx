@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, Crown, Gift, Users, TrendingUp, Zap, CheckCircle2, Loader2,
-  Package, Clock, Sparkles, Diamond, Star, Wallet,
+  Package, Clock, Sparkles, Diamond, Star, Wallet, PlayCircle,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -73,6 +73,11 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   const [mysteryOpening, setMysteryOpening] = useState(false);
   const [mysteryReward, setMysteryReward] = useState<number | null>(null);
   const [mysteryOpen, setMysteryOpen] = useState(false);
+
+  // ⭐️ Ads state
+  const [adsWatched, setAdsWatched] = useState(0);
+  const [maxAdsPerDay] = useState(10);
+  const [watchingAd, setWatchingAd] = useState(false);
 
   const displayName = user
     ? [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || "User"
@@ -184,6 +189,18 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     return () => clearInterval(interval);
   }, [fetchMysteryBox]);
 
+  // ⭐️ Fetch ad status
+  const fetchAdStatus = useCallback(async () => {
+    if (!telegramId) return;
+    try {
+      const res = await fetch("/api/ads/status", { headers: authHeaders });
+      const data = await res.json();
+      if (!data.error) setAdsWatched(data.watched ?? 0);
+    } catch {}
+  }, [telegramId, authHeaders]);
+
+  useEffect(() => { fetchAdStatus(); }, [fetchAdStatus]);
+
   const handleOpenMystery = async () => {
     if (!mysteryReady || mysteryOpening) return;
     setMysteryOpening(true);
@@ -199,6 +216,34 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         setTimeout(() => setMysteryOpen(false), 4000);
       }
     } catch {} finally { setMysteryOpening(false); }
+  };
+
+  // ⭐️ Handle watch ad
+  const handleWatchAd = async () => {
+    if (watchingAd || adsWatched >= maxAdsPerDay) return;
+    setWatchingAd(true);
+
+    try {
+      const { AdManager } = await import("@adsgram/web-sdk");
+      const manager = new AdManager({
+        apiKey: process.env.NEXT_PUBLIC_ADSGRAM_API_KEY!,
+      });
+
+      const result = await manager.showRewardedVideo({
+        userId: telegramId,
+      });
+
+      if (result.success) {
+        setTimeout(async () => {
+          await refreshWallet();
+          await fetchAdStatus();
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Ad error:", error);
+    } finally {
+      setWatchingAd(false);
+    }
   };
 
   const fetchReferralStats = useCallback(async () => {
@@ -353,6 +398,16 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         onClick={onNavigateToEarn}
       >
         <Gift className="mr-2 h-6 w-6" />Spin the Wheel
+      </Button>
+
+      {/* ⭐️ WATCH VIDEO BUTTON ⭐️ */}
+      <Button 
+        className="h-16 text-lg rounded-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-xl shadow-blue-500/30 border-0 transition-all active:scale-95"
+        onClick={handleWatchAd}
+        disabled={watchingAd || adsWatched >= maxAdsPerDay}
+      >
+        <PlayCircle className="mr-2 h-6 w-6" />
+        {watchingAd ? "Loading Ad..." : `Watch Video (${adsWatched}/${maxAdsPerDay})`}
       </Button>
 
       {/* ═══════ STATS ═══════ */}
