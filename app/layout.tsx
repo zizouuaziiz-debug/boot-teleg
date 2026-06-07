@@ -27,10 +27,14 @@ export default function RootLayout({
         />
 
         {/* ⭐️ AdsGram SDK */}
-        <Script
-          src="https://adsgram.ai/sdk.js"
-          strategy="afterInteractive"
-        />
+        <html lang="en">
+  <head>
+    <script src="https://adsgram.ai/sdk.js" async defer />
+  </head>
+  <body>
+    {/* ... */}
+  </body>
+</html>
 
         <ServiceWorkerRegistrar />
 
