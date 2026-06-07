@@ -22,12 +22,12 @@ export default function RootLayout({
       <body>
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
-           src="https://sad.adsgram.ai/js/sad.min.js"
-  strategy="afterInteractive"
-/>
           strategy="beforeInteractive"
         />
-        
+        <Script
+          src="https://sad.adsgram.ai/js/sad.min.js"
+          strategy="afterInteractive"
+        />
         <ServiceWorkerRegistrar />
         <UserProvider>{children}</UserProvider>
       </body>
