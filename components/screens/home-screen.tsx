@@ -234,13 +234,33 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   });
 
   const handleWatchAd = async () => {
-    if (watchingAd || adsWatched >= maxAdsPerDay) return;
-    setWatchingAd(true);
-    try {
-      await showAd();
-    } catch {}
+  if (watchingAd || adsWatched >= maxAdsPerDay) return;
+  setWatchingAd(true);
+
+  try {
+    const Adsgram = (window as any).Adsgram;
+    
+    if (!Adsgram) {
+      alert("AdsGram not loaded");
+      setWatchingAd(false);
+      return;
+    }
+
+    const controller = Adsgram.init({
+      blockId: process.env.NEXT_PUBLIC_ADSGRAM || "",
+      debug: true,
+    });
+
+    await controller.show();
+    
+    await refreshWallet();
+    await fetchAdStatus();
+  } catch (error: any) {
+    alert("Error: " + (error?.description || "Unknown error"));
+  } finally {
     setWatchingAd(false);
-  };
+  }
+};
 
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
