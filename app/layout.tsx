@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { UserProvider } from "@/context/user-context";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
-import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "GoldenTask",
@@ -20,18 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* ⭐️ AdsGram SDK */}
-        <script src="https://adsgram.ai/sdk.js" async defer />
+        <script src="https://telegram.org/js/telegram-web-app.js" />
+        <script src="https://adsgram.ai/sdk.js" />
       </head>
       <body>
-        {/* Telegram WebApp SDK */}
-        <Script
-          src="https://telegram.org/js/telegram-web-app.js"
-          strategy="beforeInteractive"
-        />
-
         <ServiceWorkerRegistrar />
-
         <UserProvider>{children}</UserProvider>
       </body>
     </html>
