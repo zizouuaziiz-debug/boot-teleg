@@ -230,11 +230,20 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
       return;
     }
 
-    const controller = Adsgram.init({ blockId: "34448" }); // ⭐️ حذف debug: true
+    const controller = Adsgram.init({ blockId: "34448" });
     await controller.show();
 
-    await refreshWallet();
-    await fetchAdStatus();
+    // ⭐️ إضافة المكافأة بعد الإعلان
+    const res = await fetch("/api/ads/complete", {
+      method: "POST",
+      headers: authHeaders,
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      await refreshWallet();
+      await fetchAdStatus();
+    }
   } catch (error: any) {
     console.error("Ad error:", error);
   } finally {
