@@ -218,55 +218,23 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   };
 
   // ⭐️ Ads handlers
-  const onAdReward = useCallback(async () => {
-    await refreshWallet();
-    await fetchAdStatus();
-  }, [refreshWallet, fetchAdStatus]);
-
-  const onAdError = useCallback((result: any) => {
-    console.error("Ad error:", result);
-  }, []);
-
-  const showAd = useAdsgram({
-    blockId: process.env.NEXT_PUBLIC_ADSGRAM || "",
-    onReward: onAdReward,
-    onError: onAdError,
-  });
-
   const handleWatchAd = async () => {
   if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
 
-  try {
-    // ⭐️ انتظر تحميل AdsGram
-    let attempts = 0;
-    while (!(window as any).Adsgram && attempts < 50) {
-      await new Promise(r => setTimeout(r, 200));
-      attempts++;
-    }
-
-    const Adsgram = (window as any).Adsgram;
-    
-    if (!Adsgram) {
-      alert("AdsGram not loaded after waiting");
-      setWatchingAd(false);
-      return;
-    }
-
-    const controller = Adsgram.init({
-      blockId: "YOUR_BLOCK_ID", // ⭐️ حط رقم الـ block مباشرة للتجربة
-      debug: true,
-    });
-
-    await controller.show();
-    
+  // ⭐️ فتح AdsGram في نافذة جديدة
+  const tg = (window as any).Telegram?.WebApp;
+  if (tg) {
+    tg.openLink(`https://adsgram.ai/show/${BLOCK_ID}?userid=${telegramId}`);
+  }
+  
+  // انتظر 30 ثانية ثم حدث
+  setTimeout(async () => {
     await refreshWallet();
     await fetchAdStatus();
-  } catch (error: any) {
-    alert("Error: " + JSON.stringify(error));
-  } finally {
-    setWatchingAd(false);
-  }
+  }, 30000);
+  
+  setWatchingAd(false);
 };
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
