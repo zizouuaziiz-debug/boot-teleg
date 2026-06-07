@@ -225,7 +225,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   // ⭐️ فتح AdsGram في نافذة جديدة
   const tg = (window as any).Telegram?.WebApp;
   if (tg) {
-    tg.openLink(`https://adsgram.ai/show/${34448}?userid=${telegramId}`);
+    tg.openLink(`https://adsgram.ai/show/34448?userid=${telegramId}`);
   }
   
   // انتظر 30 ثانية ثم حدث
