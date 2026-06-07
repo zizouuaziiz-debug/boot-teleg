@@ -1,3 +1,4 @@
+<script src="https://adsgram.ai/sdk.js" async />
 import type { Metadata } from "next";
 import "./globals.css";
 import { UserProvider } from "@/context/user-context";
