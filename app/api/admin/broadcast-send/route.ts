@@ -8,10 +8,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const { broadcastId, message } = body;
+  const { broadcastId, message, imageUrl } = body;
 
-  if (!broadcastId || !message) {
-    return NextResponse.json({ error: "broadcastId and message required" }, { status: 400 });
+  if (!broadcastId || (!message && !imageUrl)) {
+    return NextResponse.json({ error: "broadcastId and message or imageUrl required" }, { status: 400 });
   }
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -43,14 +43,30 @@ export async function POST(req: NextRequest) {
     if (sent && sent.length > 0) continue;
 
     try {
-      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: id,
-          text: message,
-        }),
-      });
+      let res;
+
+      if (imageUrl) {
+        // إرسال صورة مع تعليق
+        res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: id,
+            photo: imageUrl,
+            caption: message || "",
+          }),
+        });
+      } else {
+        // إرسال نص فقط
+        res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: id,
+            text: message,
+          }),
+        });
+      }
 
       if (res.ok) {
         await supabase.from("broadcast_sent").insert({
