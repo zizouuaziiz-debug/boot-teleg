@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAdsgram } from "@/hooks/useAdsgram";
 import { useUser } from "@/context/user-context";
-
+import { useAdsgram } from "@/hooks/useAdsgram";
 interface HomeScreenProps {
   onNavigateToEarn?: () => void;
 }
