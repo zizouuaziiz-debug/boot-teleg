@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <script src="https://telegram.org/js/telegram-web-app.js" />
-        <script src="https://adsgram.ai/sdk.js" />
+        
         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
         <script>eruda.init();</script>
       </head>
