@@ -11,10 +11,10 @@ export async function POST(req: NextRequest) {
   if (!token || !verifySessionToken(token)) return unauthorized();
 
   const body = await req.json().catch(() => ({}));
-  const { message } = body;
+  const { message, imageUrl } = body;
 
-  if (!message) {
-    return NextResponse.json({ error: "Message required" }, { status: 400 });
+  if (!message && !imageUrl) {
+    return NextResponse.json({ error: "Message or image required" }, { status: 400 });
   }
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   // سجل broadcast جديد
   const { data: log } = await supabase
     .from("broadcast_logs")
-    .insert({ message, status: "running" })
+    .insert({ message: message || imageUrl, status: "running" })
     .select()
     .single();
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${process.env.CRON_SECRET}`,
     },
-    body: JSON.stringify({ broadcastId: log.id, message }),
+    body: JSON.stringify({ broadcastId: log.id, message, imageUrl }),
   }).catch(console.error);
 
   return NextResponse.json({ success: true, message: "Broadcast started" });
