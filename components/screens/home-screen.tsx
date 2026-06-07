@@ -218,27 +218,45 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
   // ⭐️ Ads handlers
   const handleWatchAd = async () => {
+  const handleWatchAd = async () => {
   if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
 
   try {
-    const Adsgram = (window as any).Adsgram;
-    
-    if (!Adsgram) {
-      alert("Adsgram not loaded");
-      setWatchingAd(false);
-      return;
-    }
+    // نحمل الـ SDK يدوياً
+    const loadAdsgram = (): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        // إذا محمل مسبقاً
+        if ((window as any).Adsgram) {
+          resolve((window as any).Adsgram);
+          return;
+        }
 
+        const script = document.createElement('script');
+        script.src = 'https://adsgram.ai/sdk.js';
+        script.onload = () => {
+          // انتظر شوي بعد التحميل
+          setTimeout(() => {
+            if ((window as any).Adsgram) {
+              resolve((window as any).Adsgram);
+            } else {
+              reject(new Error('Adsgram not available after load'));
+            }
+          }, 1000);
+        };
+        script.onerror = () => reject(new Error('Failed to load Adsgram'));
+        document.head.appendChild(script);
+      });
+    };
+
+    const Adsgram = await loadAdsgram();
     const controller = Adsgram.init({ blockId: "34448", debug: true });
-
     await controller.show();
-    
-    alert("Ad watched! Giving reward...");
+
     await refreshWallet();
     await fetchAdStatus();
   } catch (error: any) {
-    alert("Error: " + JSON.stringify(error));
+    alert("Error: " + (error?.message || JSON.stringify(error)));
   } finally {
     setWatchingAd(false);
   }
