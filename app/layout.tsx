@@ -1,4 +1,3 @@
-<script src="https://adsgram.ai/sdk.js" async />
 import type { Metadata } from "next";
 import "./globals.css";
 import { UserProvider } from "@/context/user-context";
@@ -25,6 +24,12 @@ export default function RootLayout({
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"
+        />
+
+        {/* ⭐️ AdsGram SDK */}
+        <Script
+          src="https://adsgram.ai/sdk.js"
+          strategy="afterInteractive"
         />
 
         <ServiceWorkerRegistrar />
