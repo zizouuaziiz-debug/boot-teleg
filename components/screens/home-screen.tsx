@@ -238,16 +238,23 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   setWatchingAd(true);
 
   try {
+    // ⭐️ انتظر تحميل AdsGram
+    let attempts = 0;
+    while (!(window as any).Adsgram && attempts < 50) {
+      await new Promise(r => setTimeout(r, 200));
+      attempts++;
+    }
+
     const Adsgram = (window as any).Adsgram;
     
     if (!Adsgram) {
-      alert("AdsGram not loaded");
+      alert("AdsGram not loaded after waiting");
       setWatchingAd(false);
       return;
     }
 
     const controller = Adsgram.init({
-      blockId: process.env.NEXT_PUBLIC_ADSGRAM || "",
+      blockId: "YOUR_BLOCK_ID", // ⭐️ حط رقم الـ block مباشرة للتجربة
       debug: true,
     });
 
@@ -256,12 +263,11 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     await refreshWallet();
     await fetchAdStatus();
   } catch (error: any) {
-    alert("Error: " + (error?.description || "Unknown error"));
+    alert("Error: " + JSON.stringify(error));
   } finally {
     setWatchingAd(false);
   }
 };
-
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
     try {
