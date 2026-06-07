@@ -221,19 +221,29 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
 
-  // ⭐️ فتح AdsGram في نافذة جديدة
-  const tg = (window as any).Telegram?.WebApp;
-  if (tg) {
-    tg.openLink(`https://adsgram.ai/show/34448?userid=${telegramId}`);
-  }
-  
-  // انتظر 30 ثانية ثم حدث
-  setTimeout(async () => {
+  try {
+    const Adsgram = (window as any).Adsgram;
+    
+    if (!Adsgram) {
+      alert("AdsGram SDK not loaded. Please try again.");
+      setWatchingAd(false);
+      return;
+    }
+
+    const controller = Adsgram.init({
+      blockId: 34448,
+      debug: true,
+    });
+
+    await controller.show();
+    
     await refreshWallet();
     await fetchAdStatus();
-  }, 30000);
-  
-  setWatchingAd(false);
+  } catch (error: any) {
+    console.error("Ad error:", error);
+  } finally {
+    setWatchingAd(false);
+  }
 };
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
