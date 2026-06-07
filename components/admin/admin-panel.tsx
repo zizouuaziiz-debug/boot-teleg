@@ -1731,8 +1731,18 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Image URL (optional)</label>
+            <Input
+              type="text"
+              placeholder="https://example.com/image.jpg"
+              value={notifyImageUrl}
+              onChange={e => setNotifyImageUrl(e.target.value)}
+              className="bg-secondary/50"
+            />
+          </div>
           <Textarea
-            placeholder="Message to all users..."
+            placeholder="Message to all users... (optional if image is set)"
             value={notifyMsg}
             onChange={e => setNotifyMsg(e.target.value)}
             className="bg-secondary/50 min-h-[80px]"
@@ -1745,7 +1755,7 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
           <Button
             className="primary-gradient"
             onClick={handleSendNotification}
-            disabled={notifySending || !notifyMsg.trim()}
+            disabled={notifySending || (!notifyMsg.trim() && !notifyImageUrl.trim())}
           >
             <Send className="mr-2 h-4 w-4" />
             {notifySending ? "Sending..." : "Send to All Users"}
