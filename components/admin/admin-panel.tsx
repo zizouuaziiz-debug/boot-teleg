@@ -1485,7 +1485,7 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
   const [notifyMsg, setNotifyMsg] = useState("")
   const [notifySending, setNotifySending] = useState(false)
   const [notifyStatus, setNotifyStatus] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
+  const [notifyImageUrl, setNotifyImageUrl] = useState("")
   const DEFAULT_VIP_PLANS = [
     { level: 0, name: "Free",     price: 0,    bonus: "1%"  },
     { level: 1, name: "Bronze",   price: 50,   bonus: "5%"  },
