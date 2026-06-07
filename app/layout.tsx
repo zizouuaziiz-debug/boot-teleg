@@ -21,8 +21,7 @@ export default function RootLayout({
       <head>
         <script src="https://telegram.org/js/telegram-web-app.js" />
         
-        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-        <script>eruda.init();</script>
+        
       </head>
       <body>
         <ServiceWorkerRegistrar />
