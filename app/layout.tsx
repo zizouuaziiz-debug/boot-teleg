@@ -19,22 +19,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* ⭐️ AdsGram SDK */}
+        <script src="https://adsgram.ai/sdk.js" async defer />
+      </head>
       <body>
-        {/* 🔥 IMPORTANT: Telegram WebApp SDK */}
+        {/* Telegram WebApp SDK */}
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"
         />
-
-        {/* ⭐️ AdsGram SDK */}
-        <html lang="en">
-  <head>
-    <script src="https://adsgram.ai/sdk.js" async defer />
-  </head>
-  <body>
-    {/* ... */}
-  </body>
-</html>
 
         <ServiceWorkerRegistrar />
 
