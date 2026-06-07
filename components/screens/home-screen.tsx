@@ -1,5 +1,5 @@
 "use client";
-import { useAdsgram } from "@/hooks/useAdsgram";
+
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, Crown, Gift, Users, TrendingUp, Zap, CheckCircle2, Loader2,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { useUser } from "@/context/user-context";
+import { useAdsgram } from "@/hooks/useAdsgram";
 
 interface HomeScreenProps {
   onNavigateToEarn?: () => void;
@@ -74,7 +75,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   const [mysteryReward, setMysteryReward] = useState<number | null>(null);
   const [mysteryOpen, setMysteryOpen] = useState(false);
 
-  // ⭐️ Ads state
   const [adsWatched, setAdsWatched] = useState(0);
   const [maxAdsPerDay] = useState(10);
   const [watchingAd, setWatchingAd] = useState(false);
@@ -189,7 +189,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     return () => clearInterval(interval);
   }, [fetchMysteryBox]);
 
-  // ⭐️ Fetch ad status
   const fetchAdStatus = useCallback(async () => {
     if (!telegramId) return;
     try {
@@ -218,31 +217,30 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
     } catch {} finally { setMysteryOpening(false); }
   };
 
-  // ⭐️ Handle watch ad
+  // ⭐️ Ads handlers
+  const onAdReward = useCallback(async () => {
+    await refreshWallet();
+    await fetchAdStatus();
+  }, [refreshWallet, fetchAdStatus]);
+
+  const onAdError = useCallback((result: any) => {
+    console.error("Ad error:", result);
+  }, []);
+
+  const showAd = useAdsgram({
+    blockId: process.env.NEXT_PUBLIC_ADSGRAM || "",
+    onReward: onAdReward,
+    onError: onAdError,
+  });
+
   const handleWatchAd = async () => {
-  if (watchingAd || adsWatched >= maxAdsPerDay) return;
-  setWatchingAd(true);
-
-  try {
-    const { AdsGram } = await import("@adsgram/react");
-    
-    const result = await AdsGram.showRewardedVideo({
-      appId: process.env.NEXT_PUBLIC_ADSGRAM_API_KEY,
-      userId: telegramId,
-    });
-
-    if (result.success) {
-      setTimeout(async () => {
-        await refreshWallet();
-        await fetchAdStatus();
-      }, 3000);
-    }
-  } catch (error) {
-    console.error("Ad error:", error);
-  } finally {
+    if (watchingAd || adsWatched >= maxAdsPerDay) return;
+    setWatchingAd(true);
+    try {
+      await showAd();
+    } catch {}
     setWatchingAd(false);
-  }
-};
+  };
 
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
@@ -398,7 +396,7 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         <Gift className="mr-2 h-6 w-6" />Spin the Wheel
       </Button>
 
-      {/* ⭐️ WATCH VIDEO BUTTON ⭐️ */}
+      {/* ═══════ WATCH VIDEO BUTTON ═══════ */}
       <Button 
         className="h-16 text-lg rounded-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-xl shadow-blue-500/30 border-0 transition-all active:scale-95"
         onClick={handleWatchAd}
