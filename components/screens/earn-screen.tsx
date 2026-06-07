@@ -100,7 +100,7 @@ export function EarnScreen() {
       <Card className="glass-card overflow-hidden">
         <CardContent className="flex flex-col items-center p-6">
           <h2 className="text-xl font-bold text-foreground mb-2">Lucky Wheel</h2>
-          <p className="text-sm text-muted-foreground mb-6">Spin to win up to $10 USDT!</p>
+          <p className="text-sm text-muted-foreground mb-6">Spin to win up to $2 USDT!</p>
           <div className="relative mb-6">
             <div className="absolute -inset-3 rounded-full bg-gradient-to-r from-amber-500/30 via-yellow-400/20 to-amber-500/30 blur-xl animate-pulse" />
             <div className="absolute -inset-4 rounded-full border-4 border-amber-400/50"
