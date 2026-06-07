@@ -218,7 +218,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
   // ⭐️ Ads handlers
   const handleWatchAd = async () => {
-  const handleWatchAd = async () => {
   if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
 
