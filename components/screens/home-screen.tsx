@@ -218,15 +218,12 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
 
   // ⭐️ Ads handlers
   const handleWatchAd = async () => {
-  const handleWatchAd = async () => {
   if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
 
   try {
-    // نحمل الـ SDK يدوياً
     const loadAdsgram = (): Promise<any> => {
       return new Promise((resolve, reject) => {
-        // إذا محمل مسبقاً
         if ((window as any).Adsgram) {
           resolve((window as any).Adsgram);
           return;
@@ -235,7 +232,6 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
         const script = document.createElement('script');
         script.src = 'https://adsgram.ai/sdk.js';
         script.onload = () => {
-          // انتظر شوي بعد التحميل
           setTimeout(() => {
             if ((window as any).Adsgram) {
               resolve((window as any).Adsgram);
