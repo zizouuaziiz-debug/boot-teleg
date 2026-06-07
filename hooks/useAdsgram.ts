@@ -1,26 +1,14 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-export interface ShowPromiseResult {
-  error?: boolean;
-  done: boolean;
-  state: string;
-  description?: string;
-}
-
-export interface useAdsgramParams {
-  blockId: string;
-  onReward?: () => void;
-  onError?: (result: ShowPromiseResult) => void;
-}
-
-export function useAdsgram({ blockId, onReward, onError }: useAdsgramParams): () => Promise<void> {
+export function useAdsgram({ blockId, onReward, onError }: {
+  blockId: number;
+  onReward: () => void;
+  onError?: (result: any) => void;
+}) {
   const AdControllerRef = useRef<any>(undefined);
 
   useEffect(() => {
-    const Adsgram = (window as any).Adsgram;
-    if (Adsgram) {
-      AdControllerRef.current = Adsgram.init({ blockId, debug: false });
-    }
+    AdControllerRef.current = (window as any).Adsgram?.init({ blockId });
   }, [blockId]);
 
   return useCallback(async () => {
@@ -28,13 +16,14 @@ export function useAdsgram({ blockId, onReward, onError }: useAdsgramParams): ()
       AdControllerRef.current
         .show()
         .then(() => {
-          onReward?.();
+          onReward();
         })
-        .catch((result: ShowPromiseResult) => {
+        .catch((result: any) => {
           onError?.(result);
         });
     } else {
       onError?.({
+        error: true,
         done: false,
         state: 'load',
         description: 'Adsgram script not loaded',
