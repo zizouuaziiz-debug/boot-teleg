@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { useUser } from "@/context/user-context";
-import { useAdsgram } from "@/hooks/useAdsgram";
+
 interface HomeScreenProps {
   onNavigateToEarn?: () => void;
 }
@@ -217,39 +217,31 @@ export function HomeScreen({ onNavigateToEarn }: HomeScreenProps) {
   };
 
   // ⭐️ Ads handlers
-  const onAdReward = useCallback(async () => {
-  await refreshWallet();
-  await fetchAdStatus();
-}, [refreshWallet, fetchAdStatus]);
-
-const onAdError = useCallback((result: any) => {
-  console.error("Ad error:", result);
-}, []);
-
-const showAd = useAdsgram({
-  blockId: 34448,
-  onReward: onAdReward,
-  onError: onAdError,
-});
   const handleWatchAd = async () => {
-  alert("1. Button clicked");
-  
-  if (watchingAd || adsWatched >= maxAdsPerDay) {
-    alert("2. Blocked: " + watchingAd + ", " + adsWatched);
-    return;
-  }
-  
+  if (watchingAd || adsWatched >= maxAdsPerDay) return;
   setWatchingAd(true);
-  alert("3. Calling showAd...");
-  
+
   try {
-    await showAd();
-    alert("4. Ad completed!");
-  } catch (e: any) {
-    alert("5. Error: " + JSON.stringify(e));
+    const Adsgram = (window as any).Adsgram;
+    
+    if (!Adsgram) {
+      alert("Adsgram not loaded");
+      setWatchingAd(false);
+      return;
+    }
+
+    const controller = Adsgram.init({ blockId: "34448", debug: true });
+
+    await controller.show();
+    
+    alert("Ad watched! Giving reward...");
+    await refreshWallet();
+    await fetchAdStatus();
+  } catch (error: any) {
+    alert("Error: " + JSON.stringify(error));
+  } finally {
+    setWatchingAd(false);
   }
-  
-  setWatchingAd(false);
 };
   const fetchReferralStats = useCallback(async () => {
     if (!telegramId) return;
