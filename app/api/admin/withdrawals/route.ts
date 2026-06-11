@@ -16,13 +16,29 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("transactions")
-    .select("*, users(telegram_id, first_name, last_name, username)")
+    .select("*, users!inner(first_name, last_name, username, telegram_id)")
     .eq("type", "withdrawal")
     .order("created_at", { ascending: false });
 
   if (status) query = query.eq("status", status);
+  
   const { data: withdrawals } = await query.limit(200);
-  return NextResponse.json({ withdrawals: withdrawals ?? [] });
+
+  // ⭐️ تحويل البيانات لتشمل اسم المستخدم
+  const formattedWithdrawals = (withdrawals ?? []).map((w: any) => ({
+    id: w.id,
+    userId: w.user_id,
+    user: w.users?.first_name || w.users?.username || `#${w.users?.telegram_id || "Unknown"}`,
+    amount: w.amount,
+    address: w.address || "",
+    status: w.status,
+    date: new Date(w.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+    processedAt: w.updated_at && w.status !== "pending" 
+      ? new Date(w.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) 
+      : undefined,
+  }));
+
+  return NextResponse.json({ withdrawals: formattedWithdrawals });
 }
 
 export async function PATCH(req: NextRequest) {
