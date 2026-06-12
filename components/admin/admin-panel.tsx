@@ -722,6 +722,21 @@ function UsersContent({ users, totalUsers, currentPage, totalPages, onPageChange
                             ? <><Ban className="mr-2 h-4 w-4" />Suspend</>
                             : <><UserCheck className="mr-2 h-4 w-4" />Activate</>}
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+  const msg = prompt("Enter message to send to this user:");
+  if (msg && msg.trim()) {
+    fetch("/api/admin/send-to-user", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ telegramId: String(user.telegram_id), message: msg.trim() }),
+    })
+    .then(r => r.json())
+    .then(d => alert(d.success ? "✅ Message sent!" : "❌ " + (d.error || "Failed")));
+  }
+}}>
+  <Send className="mr-2 h-4 w-4 text-blue-400" />Send Message
+</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setShowDeleteDialog(true) }}>
                           <Trash2 className="mr-2 h-4 w-4" />Delete User
                         </DropdownMenuItem>
