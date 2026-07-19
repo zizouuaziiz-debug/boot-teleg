@@ -1621,7 +1621,6 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
 
   // ⭐️ Send notification handler
   const handleSendNotification = async () => {
-  const handleSendNotification = async () => {
   if (!notifyMsg.trim() && !notifyImageUrl.trim()) return;
 
   setNotifySending(true);
