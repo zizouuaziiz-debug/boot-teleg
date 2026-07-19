@@ -8,24 +8,27 @@ function unauthorized() {
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value;
-  if (!token || !verifySessionToken(token)) return unauthorized();
+
+  if (!token || !verifySessionToken(token)) {
+    return unauthorized();
+  }
 
   const body = await req.json().catch(() => ({}));
   const { message, imageUrl } = body;
 
   if (!message && !imageUrl) {
-    return NextResponse.json({ error: "Message or image required" }, { status: 400 });
-  }
-
-  const BOT_TOKEN = process.env.BOT_TOKEN;
-  if (!BOT_TOKEN) {
-    return NextResponse.json({ error: "Bot token not configured" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Message or image required" },
+      { status: 400 }
+    );
   }
 
   const supabase = getSupabaseAdmin();
 
-  // تحقق من broadcast قيد التنفيذ
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const fiveMinAgo = new Date(
+    Date.now() - 5 * 60 * 1000
+  ).toISOString();
+
   const { data: running } = await supabase
     .from("broadcast_logs")
     .select("id")
@@ -34,31 +37,56 @@ export async function POST(req: NextRequest) {
     .limit(1);
 
   if (running && running.length > 0) {
-    return NextResponse.json({ error: "Broadcast already in progress" }, { status: 409 });
+    return NextResponse.json(
+      { error: "Broadcast already in progress" },
+      { status: 409 }
+    );
   }
 
-  // سجل broadcast جديد
-  const { data: log } = await supabase
+
+  const { data: log, error } = await supabase
     .from("broadcast_logs")
-    .insert({ message: message || imageUrl, status: "running" })
+    .insert({
+      message: message || imageUrl,
+      status: "running",
+      total_users: 0,
+      success_count: 0,
+      failed_count: 0,
+    })
     .select()
     .single();
 
-  if (!log) {
-    return NextResponse.json({ error: "Failed to start broadcast" }, { status: 500 });
+
+  if (error || !log) {
+    return NextResponse.json(
+      { error: "Failed to start broadcast" },
+      { status: 500 }
+    );
   }
 
-  // ابدأ الإرسال في الخلفية
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${req.headers.get("host")}`;
-  
-  fetch(`${baseUrl}/api/admin/broadcast-send`, {
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    `https://${req.headers.get("host")}`;
+
+
+  await fetch(`${baseUrl}/api/admin/broadcast-send`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${process.env.CRON_SECRET}`,
     },
-    body: JSON.stringify({ broadcastId: log.id, message, imageUrl }),
-  }).catch(console.error);
+    body: JSON.stringify({
+      broadcastId: log.id,
+      message,
+      imageUrl,
+    }),
+  });
 
-  return NextResponse.json({ success: true, message: "Broadcast started" });
+
+  return NextResponse.json({
+    success: true,
+    broadcastId: log.id,
+    message: "Broadcast started",
+  });
 }
