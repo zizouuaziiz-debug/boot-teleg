@@ -2,14 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
+  console.log("BROADCAST SEND ROUTE STARTED");
+
   const authHeader = req.headers.get("authorization");
 
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.log("UNAUTHORIZED REQUEST");
+
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const body = await req.json().catch(() => ({}));
   const { broadcastId, message, imageUrl } = body;
+
+  console.log("BROADCAST ID:", broadcastId);
 
   if (!broadcastId || (!message && !imageUrl)) {
     return NextResponse.json(
@@ -29,7 +38,8 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
-  // إرسال 200 مستخدم فقط في كل تشغيل
+  console.log("SUPABASE CONNECTED");
+
   const BATCH_SIZE = 200;
 
   const { data: allUsers, error } = await supabase
@@ -38,8 +48,15 @@ export async function POST(req: NextRequest) {
     .eq("status", "active")
     .limit(3000);
 
+  console.log("ACTIVE USERS FOUND:", allUsers?.length);
+
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.log("USERS ERROR:", error.message);
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 
   const users = [];
@@ -60,6 +77,8 @@ export async function POST(req: NextRequest) {
 
     if (users.length >= BATCH_SIZE) break;
   }
+
+  console.log("USERS IN THIS BATCH:", users.length);
 
   let success = 0;
   let failed = 0;
@@ -110,12 +129,14 @@ export async function POST(req: NextRequest) {
         success++;
       } else {
         failed++;
+        console.log("TELEGRAM FAILED:", id);
       }
 
       await new Promise((r) => setTimeout(r, 50));
 
-    } catch {
+    } catch (err) {
       failed++;
+      console.log("SEND ERROR:", id, err);
     }
   }
 
@@ -124,6 +145,7 @@ export async function POST(req: NextRequest) {
     .select("*", { count: "exact", head: true })
     .eq("broadcast_id", broadcastId);
 
+  console.log("TOTAL SENT:", count);
 
   await supabase
     .from("broadcast_logs")
@@ -134,7 +156,6 @@ export async function POST(req: NextRequest) {
       status: "running",
     })
     .eq("id", broadcastId);
-
 
   return NextResponse.json({
     success: true,
