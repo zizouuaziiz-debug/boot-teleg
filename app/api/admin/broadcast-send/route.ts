@@ -5,7 +5,10 @@ export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
 
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const body = await req.json().catch(() => ({}));
@@ -13,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   if (!broadcastId || (!message && !imageUrl)) {
     return NextResponse.json(
-      { error: "Missing data" },
+      { error: "Missing broadcast data" },
       { status: 400 }
     );
   }
@@ -22,38 +25,52 @@ export async function POST(req: NextRequest) {
 
   if (!BOT_TOKEN) {
     return NextResponse.json(
-      { error: "Missing bot token" },
+      { error: "Bot token missing" },
       { status: 500 }
     );
   }
 
   const supabase = getSupabaseAdmin();
 
-  const BATCH_SIZE = 50;
+  // عدد صغير حتى لا يتجاوز Vercel timeout
+  const BATCH_SIZE = 10;
 
-  const { data: users } = await supabase
+  const { data: allUsers, error } = await supabase
     .from("users")
     .select("telegram_id")
-    .eq("status", "active")
-    .limit(3000);
+    .eq("status", "active");
 
-  const pendingUsers = [];
+  if (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
 
-  for (const user of users || []) {
-    const id = String(user.telegram_id);
 
-    const { data } = await supabase
+  const usersToSend: string[] = [];
+
+
+  for (const user of allUsers || []) {
+
+    const telegramId = String(user.telegram_id);
+
+    const { data: alreadySent } = await supabase
       .from("broadcast_sent")
       .select("id")
       .eq("broadcast_id", broadcastId)
-      .eq("telegram_id", id)
+      .eq("telegram_id", telegramId)
       .limit(1);
 
-    if (!data || data.length === 0) {
-      pendingUsers.push(id);
+
+    if (!alreadySent || alreadySent.length === 0) {
+      usersToSend.push(telegramId);
     }
 
-    if (pendingUsers.length >= BATCH_SIZE) break;
+
+    if (usersToSend.length >= BATCH_SIZE) {
+      break;
+    }
   }
 
 
@@ -61,7 +78,7 @@ export async function POST(req: NextRequest) {
   let failed = 0;
 
 
-  for (const id of pendingUsers) {
+  for (const telegramId of usersToSend) {
 
     try {
 
@@ -77,12 +94,12 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify(
             imageUrl
               ? {
-                  chat_id: id,
+                  chat_id: telegramId,
                   photo: imageUrl,
                   caption: message || "",
                 }
               : {
-                  chat_id: id,
+                  chat_id: telegramId,
                   text: message,
                 }
           ),
@@ -91,10 +108,13 @@ export async function POST(req: NextRequest) {
 
 
       if (response.ok) {
-        await supabase.from("broadcast_sent").insert({
-          broadcast_id: broadcastId,
-          telegram_id: id,
-        });
+
+        await supabase
+          .from("broadcast_sent")
+          .insert({
+            broadcast_id: broadcastId,
+            telegram_id: telegramId,
+          });
 
         success++;
 
@@ -103,13 +123,17 @@ export async function POST(req: NextRequest) {
       }
 
 
-      await new Promise(r => setTimeout(r, 100));
+      // حماية من Telegram rate limit
+      await new Promise(resolve =>
+        setTimeout(resolve, 150)
+      );
 
 
     } catch {
       failed++;
     }
   }
+
 
 
   const { count } = await supabase
@@ -122,49 +146,57 @@ export async function POST(req: NextRequest) {
 
 
 
+  const totalUsers = allUsers?.length || 0;
+
+
   await supabase
     .from("broadcast_logs")
     .update({
-      total_users: 2379,
+      total_users: totalUsers,
       success_count: count || 0,
       failed_count: failed,
-      status: count && count >= 2379
-        ? "completed"
-        : "running",
+      status:
+        (count || 0) >= totalUsers
+          ? "completed"
+          : "running",
     })
     .eq("id", broadcastId);
 
 
 
-  // إعادة تشغيل الدفعة التالية تلقائيا
-  if (!count || count < 2379) {
+  // تشغيل الدفعة التالية
+  if ((count || 0) < totalUsers) {
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       `https://${req.headers.get("host")}`;
 
 
-    fetch(`${baseUrl}/api/admin/broadcast-send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization":
-          `Bearer ${process.env.CRON_SECRET}`,
-      },
-      body: JSON.stringify({
-        broadcastId,
-        message,
-        imageUrl,
-      }),
-    }).catch(console.error);
-
+    fetch(
+      `${baseUrl}/api/admin/broadcast-send`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization":
+            `Bearer ${process.env.CRON_SECRET}`,
+        },
+        body: JSON.stringify({
+          broadcastId,
+          message,
+          imageUrl,
+        }),
+      }
+    ).catch(() => {});
   }
+
 
 
   return NextResponse.json({
     success: true,
-    sent: success,
-    total_sent: count || 0,
+    sent_this_batch: success,
     failed,
+    total_sent: count || 0,
+    total_users: totalUsers,
   });
 }
