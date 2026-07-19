@@ -1621,30 +1621,56 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
 
   // ⭐️ Send notification handler
   const handleSendNotification = async () => {
-    if (!notifyMsg.trim() && !notifyImageUrl.trim()) return
-    setNotifySending(true)
-    setNotifyStatus(null)
-    try {
+  const handleSendNotification = async () => {
+  if (!notifyMsg.trim() && !notifyImageUrl.trim()) return;
+
+  setNotifySending(true);
+  setNotifyStatus(null);
+
+  let attempts = 0;
+
+  try {
+    while (attempts < 300) {
       const res = await fetch("/api/admin/notify", {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: notifyMsg, imageUrl: notifyImageUrl }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setNotifyMsg("")
-        setNotifyImageUrl("")
-        setNotifyStatus({ type: "success", text: "✅ Sent to all users!" })
-      } else {
-        setNotifyStatus({ type: "error", text: data.error || "Failed to send" })
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: notifyMsg,
+          imageUrl: notifyImageUrl,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success && data.error !== "Broadcast already in progress") {
+        throw new Error(data.error || "Failed");
       }
-    } catch {
-      setNotifyStatus({ type: "error", text: "Network error" })
-    } finally {
-      setNotifySending(false)
-      setTimeout(() => setNotifyStatus(null), 3000)
+
+      attempts++;
+
+      // انتظر ثانية ثم أعد المحاولة
+      await new Promise((r) => setTimeout(r, 1000));
     }
+
+    setNotifyMsg("");
+    setNotifyImageUrl("");
+    setNotifyStatus({
+      type: "success",
+      text: "✅ Broadcast completed",
+    });
+
+  } catch (e: any) {
+    setNotifyStatus({
+      type: "error",
+      text: e.message || "Network error",
+    });
+  } finally {
+    setNotifySending(false);
   }
+};
 
   return (
     <div className="max-w-2xl space-y-6">
