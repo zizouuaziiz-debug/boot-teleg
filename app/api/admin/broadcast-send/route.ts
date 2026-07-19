@@ -32,13 +32,17 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
-  // عدد صغير حتى لا يتجاوز Vercel timeout
+  // عدد صغير حتى لا يحدث Vercel timeout
   const BATCH_SIZE = 10;
 
+
+  // جلب المستخدمين مع تجاوز حد Supabase 1000
   const { data: allUsers, error } = await supabase
     .from("users")
     .select("telegram_id")
-    .eq("status", "active");
+    .eq("status", "active")
+    .range(0, 5000);
+
 
   if (error) {
     return NextResponse.json(
@@ -48,14 +52,26 @@ export async function POST(req: NextRequest) {
   }
 
 
-  const usersToSend: string[] = [];
+  // العدد الحقيقي للمستخدمين
+  const { count: totalUsers } = await supabase
+    .from("users")
+    .select("*", {
+      count: "exact",
+      head: true,
+    })
+    .eq("status", "active");
+
+
+
+  const pendingUsers: string[] = [];
 
 
   for (const user of allUsers || []) {
 
     const telegramId = String(user.telegram_id);
 
-    const { data: alreadySent } = await supabase
+
+    const { data: sent } = await supabase
       .from("broadcast_sent")
       .select("id")
       .eq("broadcast_id", broadcastId)
@@ -63,22 +79,24 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
 
-    if (!alreadySent || alreadySent.length === 0) {
-      usersToSend.push(telegramId);
+    if (!sent || sent.length === 0) {
+      pendingUsers.push(telegramId);
     }
 
 
-    if (usersToSend.length >= BATCH_SIZE) {
+    if (pendingUsers.length >= BATCH_SIZE) {
       break;
     }
   }
+
 
 
   let success = 0;
   let failed = 0;
 
 
-  for (const telegramId of usersToSend) {
+
+  for (const telegramId of pendingUsers) {
 
     try {
 
@@ -119,24 +137,27 @@ export async function POST(req: NextRequest) {
         success++;
 
       } else {
+
         failed++;
+
       }
 
 
-      // حماية من Telegram rate limit
       await new Promise(resolve =>
         setTimeout(resolve, 150)
       );
 
 
     } catch {
+
       failed++;
+
     }
   }
 
 
 
-  const { count } = await supabase
+  const { count: sentCount } = await supabase
     .from("broadcast_sent")
     .select("*", {
       count: "exact",
@@ -146,17 +167,14 @@ export async function POST(req: NextRequest) {
 
 
 
-  const totalUsers = allUsers?.length || 0;
-
-
   await supabase
     .from("broadcast_logs")
     .update({
-      total_users: totalUsers,
-      success_count: count || 0,
+      total_users: totalUsers || 0,
+      success_count: sentCount || 0,
       failed_count: failed,
       status:
-        (count || 0) >= totalUsers
+        (sentCount || 0) >= (totalUsers || 0)
           ? "completed"
           : "running",
     })
@@ -164,8 +182,8 @@ export async function POST(req: NextRequest) {
 
 
 
-  // تشغيل الدفعة التالية
-  if ((count || 0) < totalUsers) {
+  // تشغيل الدفعة التالية تلقائيا
+  if ((sentCount || 0) < (totalUsers || 0)) {
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
@@ -196,7 +214,7 @@ export async function POST(req: NextRequest) {
     success: true,
     sent_this_batch: success,
     failed,
-    total_sent: count || 0,
-    total_users: totalUsers,
+    total_sent: sentCount || 0,
+    total_users: totalUsers || 0,
   });
 }
