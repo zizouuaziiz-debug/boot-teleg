@@ -36,57 +36,56 @@ export async function POST(req: NextRequest) {
     .gte("created_at", fiveMinAgo)
     .limit(1);
 
+  let broadcastId: string;
+
   if (running && running.length > 0) {
-    return NextResponse.json(
-      { error: "Broadcast already in progress" },
-      { status: 409 }
-    );
+    // إذا كان هناك بث جارٍ، أكمله
+    broadcastId = running[0].id;
+  } else {
+    // أنشئ بثًا جديدًا
+    const { data: log, error } = await supabase
+      .from("broadcast_logs")
+      .insert({
+        message: message || imageUrl,
+        status: "running",
+        total_users: 0,
+        success_count: 0,
+        failed_count: 0,
+      })
+      .select()
+      .single();
+
+    if (error || !log) {
+      return NextResponse.json(
+        { error: "Failed to start broadcast" },
+        { status: 500 }
+      );
+    }
+
+    broadcastId = log.id;
   }
-
-
-  const { data: log, error } = await supabase
-    .from("broadcast_logs")
-    .insert({
-      message: message || imageUrl,
-      status: "running",
-      total_users: 0,
-      success_count: 0,
-      failed_count: 0,
-    })
-    .select()
-    .single();
-
-
-  if (error || !log) {
-    return NextResponse.json(
-      { error: "Failed to start broadcast" },
-      { status: 500 }
-    );
-  }
-
 
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     `https://${req.headers.get("host")}`;
 
-
-  await fetch(`${baseUrl}/api/admin/broadcast-send`, {
+  // لا ننتظر انتهاء الإرسال
+  fetch(`${baseUrl}/api/admin/broadcast-send`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.CRON_SECRET}`,
+      Authorization: `Bearer ${process.env.CRON_SECRET}`,
     },
     body: JSON.stringify({
-      broadcastId: log.id,
+      broadcastId,
       message,
       imageUrl,
     }),
-  });
-
+  }).catch(console.error);
 
   return NextResponse.json({
     success: true,
-    broadcastId: log.id,
+    broadcastId,
     message: "Broadcast started",
   });
 }
