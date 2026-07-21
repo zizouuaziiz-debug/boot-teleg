@@ -1626,39 +1626,31 @@ function SettingsContent({ settings, onUpdateSettings, onChangePassword }: {
   setNotifySending(true);
   setNotifyStatus(null);
 
-  let attempts = 0;
-
   try {
-    while (attempts < 300) {
-      const res = await fetch("/api/admin/notify", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: notifyMsg,
-          imageUrl: notifyImageUrl,
-        }),
-      });
+    const res = await fetch("/api/admin/notify", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: notifyMsg,
+        imageUrl: notifyImageUrl,
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!data.success && data.error !== "Broadcast already in progress") {
-        throw new Error(data.error || "Failed");
-      }
-
-      attempts++;
-
-      // انتظر ثانية ثم أعد المحاولة
-      await new Promise((r) => setTimeout(r, 1000));
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Failed to queue broadcast");
     }
 
     setNotifyMsg("");
     setNotifyImageUrl("");
+
     setNotifyStatus({
       type: "success",
-      text: "✅ Broadcast completed",
+      text: "✅ Broadcast queued successfully. Sending in background...",
     });
 
   } catch (e: any) {
