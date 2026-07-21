@@ -25,12 +25,19 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
-  // منع إنشاء بث جديد إذا كان هناك بث يعمل
-  const { data: running } = await supabase
+  // منع إنشاء Broadcast جديد إذا كان هناك واحد يعمل
+  const { data: running, error: runningError } = await supabase
     .from("broadcast_logs")
     .select("id")
     .eq("status", "running")
     .limit(1);
+
+  if (runningError) {
+    return NextResponse.json(
+      { error: runningError.message },
+      { status: 500 }
+    );
+  }
 
   if (running && running.length > 0) {
     return NextResponse.json(
@@ -39,29 +46,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // إنشاء سجل جديد فقط
+  // إنشاء Broadcast جديد فقط
   const { data: log, error } = await supabase
     .from("broadcast_logs")
     .insert({
-      message: message || "",
+      message: message ?? "",
       image_url: imageUrl || null,
       status: "running",
       total_users: 0,
       success_count: 0,
       failed_count: 0,
+      locked_at: null,
     })
     .select()
     .single();
 
   if (error || !log) {
     return NextResponse.json(
-      { error: "Failed to create broadcast" },
+      {
+        error: error?.message || "Failed to create broadcast",
+      },
       { status: 500 }
     );
   }
 
   return NextResponse.json({
     success: true,
+    message: "Broadcast queued successfully.",
     broadcastId: log.id,
   });
 }
